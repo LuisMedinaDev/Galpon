@@ -27,6 +27,12 @@
       header, nav, footer, .no-print {
         display: none !important;
       }
+      .max-w-5xl {
+        max-width: 100% !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+      }
       main {
         padding: 0 !important;
         margin: 0 !important;
@@ -44,7 +50,7 @@
         display: block !important;
       }
       @page {
-        size: landscape;
+        size: A4 landscape;
         margin: 8mm;
       }
     }
@@ -90,7 +96,7 @@
           </button>
 
           <!-- Button: Imprimir / Guardar PDF Nativo -->
-          <button onclick="window.print()" title="Imprimir / Guardar como PDF en alta resolución" 
+          <button onclick="window.print()" title="Imprimir / Guardar como PDF en alta resolución" aria-label="Imprimir o guardar como PDF" 
                   class="p-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl shadow-sm transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
@@ -110,6 +116,9 @@
         <span class="px-2.5 py-1 rounded-lg bg-slate-200 text-slate-600 font-medium" id="badge-techo">
           Techo: 8.40 x 13.20 m
         </span>
+        <span class="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 font-semibold border border-amber-200">
+          Muro: 0.30 m
+        </span>
         <span class="px-2.5 py-1 rounded-lg bg-indigo-100 text-indigo-800 font-semibold border border-indigo-200">
           Puerta P-1: 1.00 x 2.10 m
         </span>
@@ -124,7 +133,7 @@
           </label>
           <div class="flex items-center gap-1">
             <input type="number" id="input-ancho" value="6.0" min="4.0" max="14.0" step="0.5" 
-                   oninput="updateDimensions()" 
+                   oninput="updateDimensions()" onchange="sanitizeInputs()" 
                    class="w-20 px-2 py-1 text-sm font-bold text-center rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-sky-500 outline-none">
             <span class="text-xs text-slate-400 font-medium">m</span>
           </div>
@@ -137,7 +146,7 @@
           </label>
           <div class="flex items-center gap-1">
             <input type="number" id="input-largo" value="12.0" min="6.0" max="40.0" step="1.0" 
-                   oninput="updateDimensions()" 
+                   oninput="updateDimensions()" onchange="sanitizeInputs()" 
                    class="w-20 px-2 py-1 text-sm font-bold text-center rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-sky-500 outline-none">
             <span class="text-xs text-slate-400 font-medium">m</span>
           </div>
@@ -150,7 +159,7 @@
           </label>
           <div class="flex items-center gap-1">
             <input type="number" id="input-densidad" value="5.0" min="3.0" max="8.0" step="0.5" 
-                   oninput="updateDimensions()" 
+                   oninput="updateDimensions()" onchange="sanitizeInputs()" 
                    class="w-16 px-2 py-1 text-sm font-bold text-center rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-sky-500 outline-none">
             <span class="text-xs text-slate-400 font-medium">aves/m²</span>
           </div>
@@ -227,7 +236,7 @@
       </div>
       <div class="p-2 rounded-lg bg-white border border-slate-200">
         <span class="text-slate-500 text-[11px] block">Pared & Piso</span>
-        <strong class="text-slate-800 text-sm">Muro 0.40 m | Piso +0.20 m (1.0%)</strong>
+        <strong class="text-slate-800 text-sm">Muro 0.30 m | Piso +0.20 m (1.0%)</strong>
       </div>
     </footer>
 
@@ -244,6 +253,27 @@
     let currentWidth = 6.0;
     let currentLength = 12.0;
     let currentDensity = 5.0;
+
+    // ---- Parámetros de diseño (m) ----
+    const FLOOR_H = 0.20;                        // piso elevado sobre NTN
+    const WALL_H = 0.30;                         // muro perimetral de bloque
+    const EAVE_H = 3.00;                         // altura de alero (pared lateral)
+    const RIDGE_LOW_H = 3.70;                    // cumbrera vertiente baja
+    const RIDGE_HIGH_H = 4.00;                   // cumbrera vertiente alta
+    const VENT_GAP = RIDGE_HIGH_H - RIDGE_LOW_H; // abertura cenital (0.30)
+    const OVERLAP = 0.40;                        // traslape horizontal del techo alto
+    const EAVE_OVERHANG = 1.20;                  // alero lateral
+    const GABLE_OVERHANG = 0.60;                 // alero en culatas
+    const DOOR_W = 1.00;
+    const DOOR_H = 2.10;
+
+    const SHEET_TITLES = {
+      corte: 'CORTE TRANSVERSAL ASIMÉTRICO',
+      planta: 'PLANTA ARQUITECTÓNICA CON PUERTA FRONTAL',
+      frontal: 'FACHADA FRONTAL CON PUERTA ESTÁNDAR 1.00 x 2.10 m',
+      fachada: 'FACHADA LATERAL LONGITUDINAL',
+      detalle: 'DETALLE DE CUMBRERA DESFASADA'
+    };
 
     function setTab(tabId) {
       currentTab = tabId;
@@ -281,26 +311,41 @@
       }, 3500);
     }
 
-    function updateDimensions() {
-      const wVal = parseFloat(document.getElementById('input-ancho').value);
-      const lVal = parseFloat(document.getElementById('input-largo').value);
-      const dVal = parseFloat(document.getElementById('input-densidad').value);
+    function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
 
-      if (!isNaN(wVal) && wVal >= 3.0) currentWidth = wVal;
-      if (!isNaN(lVal) && lVal >= 4.0) currentLength = lVal;
-      if (!isNaN(dVal) && dVal > 0) currentDensity = dVal;
+    // Devuelve el número del campo o el valor actual si está vacío / no es numérico
+    function numOr(value, fallback) {
+      const n = parseFloat(value);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
+    function updateDimensions() {
+      const wEl = document.getElementById('input-ancho');
+      const lEl = document.getElementById('input-largo');
+      const dEl = document.getElementById('input-densidad');
+
+      // Sanea la entrada: evita valores vacíos, NaN o fuera de rango
+      currentWidth = clamp(numOr(wEl.value, currentWidth), 4.0, 14.0);
+      currentLength = clamp(numOr(lEl.value, currentLength), 6.0, 40.0);
+      currentDensity = clamp(numOr(dEl.value, currentDensity), 3.0, 8.0);
 
       const area = currentWidth * currentLength;
       const aves = Math.floor(area * currentDensity);
-      const anchoTecho = (currentWidth + 2.40).toFixed(2);
-      const largoTecho = (currentLength + 1.20).toFixed(2);
 
       document.getElementById('badge-area').innerText = `Área: ${area.toFixed(1)} m²`;
       document.getElementById('badge-aves').innerText = `${aves} gallinas (${currentDensity.toFixed(1)}/m²)`;
-      document.getElementById('badge-techo').innerText = `Techo: ${anchoTecho} x ${largoTecho} m`;
+      document.getElementById('badge-techo').innerText =
+        `Techo: ${(currentWidth + 2 * EAVE_OVERHANG).toFixed(2)} x ${(currentLength + 2 * GABLE_OVERHANG).toFixed(2)} m`;
 
       updatePrintHeader();
       renderCurrentView();
+    }
+
+    // Reescribe los campos con el valor realmente usado (al salir del input)
+    function sanitizeInputs() {
+      document.getElementById('input-ancho').value = currentWidth.toFixed(1);
+      document.getElementById('input-largo').value = currentLength.toFixed(1);
+      document.getElementById('input-densidad').value = currentDensity.toFixed(1);
     }
 
     function updatePrintHeader() {
@@ -384,20 +429,21 @@
     // ==========================================
     function getCorteSVG() {
       const W = currentWidth;
-      const totalRoofW = W + 2.40;
+      const totalRoofW = W + 2 * EAVE_OVERHANG;
 
-      const sc = Math.min(68, 560 / totalRoofW);
+      const VSCALE = 68; // px por metro en vertical
+      const sc = Math.min(VSCALE, 560 / totalRoofW);
       const gW_px = W * sc;
-      const oH_px = 1.20 * sc;
+      const oH_px = EAVE_OVERHANG * sc;
       const secX = (920 - gW_px) / 2;
       const secY = 385;
 
-      const flrH = 0.20 * 68;
-      const blkH = 0.40 * 68;
-      const eavH = 3.00 * 68;
-      const lowRidgeH = 3.70 * 68;
-      const highRidgeH = 4.00 * 68;
-      const overlap_px = 0.40 * sc;
+      const flrH = FLOOR_H * VSCALE;
+      const blkH = WALL_H * VSCALE;
+      const eavH = EAVE_H * VSCALE;
+      const lowRidgeH = RIDGE_LOW_H * VSCALE;
+      const highRidgeH = RIDGE_HIGH_H * VSCALE;
+      const overlap_px = OVERLAP * sc;
 
       const midX = secX + gW_px / 2;
       const eaveY = secY - flrH - eavH;
@@ -413,8 +459,8 @@
       const overlapTipY = highRidgeY - overlap_px * rightSlope;
 
       // Puerta Frontal en el fondo (1.00 m ancho x 2.10 m alto)
-      const doorW_px = 1.00 * sc;
-      const doorH_px = 2.10 * 68;
+      const doorW_px = DOOR_W * sc;
+      const doorH_px = DOOR_H * VSCALE;
       const doorLeftX = midX - doorW_px / 2;
       const doorTopY = secY - flrH - doorH_px;
 
@@ -436,7 +482,7 @@
           <rect x="${midX - 38}" y="${doorTopY + 12}" width="76" height="15" fill="#ffffff" rx="3" stroke="#818cf8" stroke-width="0.7"/>
           <text x="${midX}" y="${doorTopY + 23}" fill="#4f46e5" font-size="9" font-weight="bold" text-anchor="middle">PUERTA 1.00 x 2.10</text>
 
-          <!-- Paredes laterales de bloques (0.40m) -->
+          <!-- Paredes laterales de bloques (0.30 m) -->
           <rect x="${secX}" y="${secY - flrH - blkH}" width="12" height="${blkH}" fill="#94a3b8" stroke="#1e293b" stroke-width="1.2"/>
           <rect x="${secX + gW_px - 12}" y="${secY - flrH - blkH}" width="12" height="${blkH}" fill="#94a3b8" stroke="#1e293b" stroke-width="1.2"/>
 
@@ -489,37 +535,37 @@
           <line x1="${overlapTipX}" y1="${highRidgeY - 25}" x2="${overlapTipX}" y2="${highRidgeY - 15}" stroke="#2563eb" stroke-width="1.4"/>
           <line x1="${midX}" y1="${highRidgeY - 25}" x2="${midX}" y2="${highRidgeY - 15}" stroke="#2563eb" stroke-width="1.4"/>
           <rect x="${(overlapTipX + midX)/2 - 16}" y="${highRidgeY - 28}" width="32" height="15" fill="#ffffff" rx="3" stroke="#2563eb" stroke-width="0.8"/>
-          <text x="${(overlapTipX + midX)/2}" y="${highRidgeY - 17}" fill="#2563eb" font-size="10.5" font-weight="bold" text-anchor="middle">0.40</text>
+          <text x="${(overlapTipX + midX)/2}" y="${highRidgeY - 17}" fill="#2563eb" font-size="10.5" font-weight="bold" text-anchor="middle">${OVERLAP.toFixed(2)}</text>
 
           <!-- COTA ABERTURA VERTICAL 0.30m (EN VERDE) -->
           <line x1="${midX + 18}" y1="${highRidgeY}" x2="${midX + 18}" y2="${lowRidgeY}" stroke="#10b981" stroke-width="1.2"/>
           <line x1="${midX + 13}" y1="${highRidgeY}" x2="${midX + 23}" y2="${highRidgeY}" stroke="#10b981" stroke-width="1.4"/>
           <line x1="${midX + 13}" y1="${lowRidgeY}" x2="${midX + 23}" y2="${lowRidgeY}" stroke="#10b981" stroke-width="1.4"/>
           <rect x="${midX + 24}" y="${(highRidgeY + lowRidgeY)/2 - 8}" width="32" height="16" fill="#ffffff" rx="3" stroke="#10b981" stroke-width="0.8"/>
-          <text x="${midX + 40}" y="${(highRidgeY + lowRidgeY)/2 + 4}" fill="#10b981" font-size="10.5" font-weight="bold" text-anchor="middle">0.30</text>
+          <text x="${midX + 40}" y="${(highRidgeY + lowRidgeY)/2 + 4}" fill="#10b981" font-size="10.5" font-weight="bold" text-anchor="middle">${VENT_GAP.toFixed(2)}</text>
 
           <!-- PENDIENTE DEL PISO -->
           <text x="${secX + 40}" y="${secY - flrH - 6}" fill="#0f172a" font-size="10.5" font-weight="bold">i = 1.0%</text>
 
           <!-- COTAS HORIZONTALES SUPERIORES (ESCALONADAS PARA NO CHOCAR) -->
-          ${drawDimH(secX - oH_px, secX, 52, '1.20')}
+          ${drawDimH(secX - oH_px, secX, 52, EAVE_OVERHANG.toFixed(2))}
           ${drawDimH(secX, secX + gW_px, 52, W.toFixed(2))}
-          ${drawDimH(secX + gW_px, secX + gW_px + oH_px, 52, '1.20')}
+          ${drawDimH(secX + gW_px, secX + gW_px + oH_px, 52, EAVE_OVERHANG.toFixed(2))}
           ${drawDimH(secX - oH_px, secX + gW_px + oH_px, 24, totalRoofW.toFixed(2))}
 
-          <!-- COTAS VERTICALES DERECHAS (EN COLUMNAS SEPARADAS PARA NO TAPARSE) -->
-          <!-- Columna 1: Piso (+0.20) y Muro (0.40) -->
-          ${drawDimV(secY, secY - flrH, secX + gW_px + oH_px + 18, '0.20', '#334155', '#ffffff', true)}
-          ${drawDimV(secY - flrH, secY - flrH - blkH, secX + gW_px + oH_px + 18, '0.40', '#334155', '#ffffff', true)}
+          <!-- COTAS VERTICALES DERECHAS (COLUMNAS SEPARADAS PARA NO TAPARSE) -->
+          <!-- Columna 1: Piso (+0.20) y muro perimetral -->
+          ${drawDimV(secY, secY - flrH, secX + gW_px + oH_px + 18, FLOOR_H.toFixed(2), '#334155', '#ffffff', true)}
+          ${drawDimV(secY - flrH, secY - flrH - blkH, secX + gW_px + oH_px + 18, WALL_H.toFixed(2), '#334155', '#ffffff', true)}
 
           <!-- Columna 2: Altura Pared Lateral (3.00m) -->
-          ${drawDimV(secY - flrH, eaveY, secX + gW_px + oH_px + 52, '3.00')}
+          ${drawDimV(secY - flrH, eaveY, secX + gW_px + oH_px + 72, EAVE_H.toFixed(2))}
 
           <!-- Columna 3: Altura Cumbrera Baja (3.70m) -->
-          ${drawDimV(secY - flrH, lowRidgeY, secX + gW_px + oH_px + 78, '3.70', '#dc2626')}
+          ${drawDimV(secY - flrH, lowRidgeY, secX + gW_px + oH_px + 102, RIDGE_LOW_H.toFixed(2), '#dc2626')}
 
           <!-- Columna 4: Altura Cumbrera Alta (4.00m) -->
-          ${drawDimV(secY - flrH, highRidgeY, secX + gW_px + oH_px + 104, '4.00', '#2563eb')}
+          ${drawDimV(secY - flrH, highRidgeY, secX + gW_px + oH_px + 132, RIDGE_HIGH_H.toFixed(2), '#2563eb')}
         </svg>
       `;
     }
@@ -530,14 +576,14 @@
     function getPlantaSVG() {
       const W = currentWidth;
       const L = currentLength;
-      const totalRoofW = W + 2.40;
-      const totalRoofL = L + 1.20;
+      const totalRoofW = W + 2 * EAVE_OVERHANG;
+      const totalRoofL = L + 2 * GABLE_OVERHANG;
 
       const sc = Math.min(520 / totalRoofL, 250 / totalRoofW);
       const gL_px = L * sc;
       const gW_px = W * sc;
-      const eLat_px = 1.20 * sc;
-      const eGable_px = 0.60 * sc;
+      const eLat_px = EAVE_OVERHANG * sc;
+      const eGable_px = GABLE_OVERHANG * sc;
 
       const ox = (920 - gL_px) / 2;
       const oy = (400 - gW_px) / 2 + 15;
@@ -561,12 +607,12 @@
       }
 
       // Puerta Frontal en Culata Izquierda (Eje 1 / Fachada Frontal)
-      const doorW_px = 1.00 * sc;
+      const doorW_px = DOOR_W * sc;
       const doorY1 = oy + (gW_px - doorW_px) / 2;
       const doorY2 = doorY1 + doorW_px;
 
       const ridgeY = oy + gW_px / 2;
-      const overlapY = ridgeY - (0.40 * sc);
+      const overlapY = ridgeY - (OVERLAP * sc);
 
       return `
         <svg viewBox="0 0 920 440" class="w-full max-w-4xl h-auto" style="min-width: 680px;" xmlns="http://www.w3.org/2000/svg">
@@ -577,7 +623,7 @@
           <!-- Piso del Galpón (+0.20m) -->
           <rect x="${ox}" y="${oy}" width="${gL_px}" height="${gW_px}" fill="#f8fafc" stroke="#1e293b" stroke-width="1.5"/>
 
-          <!-- Muro perimetral de bloque (0.40m de alto, 15cm ancho gráfico) -->
+          <!-- Muro perimetral de bloque (0.30 m de alto, 15 cm ancho gráfico) -->
           <!-- Pared Norte y Sur -->
           <rect x="${ox}" y="${oy}" width="${gL_px}" height="6" fill="#94a3b8"/>
           <rect x="${ox}" y="${oy + gW_px - 6}" width="${gL_px}" height="6" fill="#94a3b8"/>
@@ -596,19 +642,19 @@
           <!-- Arco de abatimiento -->
           <path d="M ${ox - doorW_px} ${doorY1} A ${doorW_px} ${doorW_px} 0 0 1 ${ox} ${doorY2}" fill="none" stroke="#6366f1" stroke-width="1.2" stroke-dasharray="3 2"/>
           
-          <!-- Cota y etiqueta de puerta -->
+          <!-- Cota y etiqueta de puerta (fuera del arco de abatimiento) -->
           <line x1="${ox - 10}" y1="${doorY1}" x2="${ox - 10}" y2="${doorY2}" stroke="#4f46e5" stroke-width="1.2"/>
           <line x1="${ox - 14}" y1="${doorY1}" x2="${ox - 6}" y2="${doorY1}" stroke="#4f46e5" stroke-width="1.2"/>
           <line x1="${ox - 14}" y1="${doorY2}" x2="${ox - 6}" y2="${doorY2}" stroke="#4f46e5" stroke-width="1.2"/>
-          <rect x="${ox - 84}" y="${(doorY1 + doorY2)/2 - 16}" width="68" height="32" fill="#ffffff" rx="4" stroke="#818cf8" stroke-width="1"/>
-          <text x="${ox - 50}" y="${(doorY1 + doorY2)/2 - 3}" fill="#3730a3" font-size="9.5" font-weight="bold" text-anchor="middle">PUERTA P-1</text>
-          <text x="${ox - 50}" y="${(doorY1 + doorY2)/2 + 10}" fill="#4f46e5" font-size="9" font-weight="bold" text-anchor="middle">1.00 x 2.10 m</text>
+          <rect x="${ox - doorW_px - 92}" y="${(doorY1 + doorY2)/2 - 16}" width="84" height="32" fill="#ffffff" rx="4" stroke="#818cf8" stroke-width="1"/>
+          <text x="${ox - doorW_px - 50}" y="${(doorY1 + doorY2)/2 - 3}" fill="#3730a3" font-size="9.5" font-weight="bold" text-anchor="middle">PUERTA P-1</text>
+          <text x="${ox - doorW_px - 50}" y="${(doorY1 + doorY2)/2 + 10}" fill="#4f46e5" font-size="9" font-weight="bold" text-anchor="middle">1.00 x 2.10 m</text>
 
           <!-- Cumbreras en planta -->
           <line x1="${ox - eGable_px}" y1="${ridgeY}" x2="${ox + gL_px + eGable_px}" y2="${ridgeY}" stroke="#64748b" stroke-width="1.2" stroke-dasharray="4 2"/>
           <line x1="${ox - eGable_px}" y1="${overlapY}" x2="${ox + gL_px + eGable_px}" y2="${overlapY}" stroke="#2563eb" stroke-width="1.6"/>
           <rect x="${ox - eGable_px}" y="${overlapY}" width="${gL_px + 2*eGable_px}" height="${ridgeY - overlapY}" fill="#bfdbfe" opacity="0.35"/>
-          <text x="${ox + gL_px/2}" y="${overlapY - 4}" fill="#2563eb" font-size="9.5" font-weight="bold" text-anchor="middle">Traslape Cumbrera 0.40 m</text>
+          <text x="${ox + gL_px/2}" y="${overlapY - 4}" fill="#2563eb" font-size="9.5" font-weight="bold" text-anchor="middle">Traslape Cumbrera ${OVERLAP.toFixed(2)} m</text>
 
           <!-- Columnas y Cotas entre ejes -->
           ${colsSvg}
@@ -620,13 +666,13 @@
 
           <!-- COTAS VERTICALES DERECHAS (NO SOLAPAN CON LA PUERTA DE LA IZQUIERDA) -->
           ${drawDimV(oy, oy + gW_px, ox + gL_px + eGable_px + 20, W.toFixed(2))}
-          ${drawDimV(oy - eLat_px, oy + gW_px + eLat_px, ox + gL_px + eGable_px + 48, totalRoofW.toFixed(2))}
-          ${drawDimV(oy - eLat_px, oy, ox + gL_px + eGable_px + 20, '1.20', '#334155', '#ffffff', true)}
-          ${drawDimV(oy + gW_px, oy + gW_px + eLat_px, ox + gL_px + eGable_px + 20, '1.20', '#334155', '#ffffff', true)}
+          ${drawDimV(oy - eLat_px, oy + gW_px + eLat_px, ox + gL_px + eGable_px + 74, totalRoofW.toFixed(2))}
+          ${drawDimV(oy - eLat_px, oy, ox + gL_px + eGable_px + 20, EAVE_OVERHANG.toFixed(2), '#334155', '#ffffff', true)}
+          ${drawDimV(oy + gW_px, oy + gW_px + eLat_px, ox + gL_px + eGable_px + 20, EAVE_OVERHANG.toFixed(2), '#334155', '#ffffff', true)}
 
           <!-- COTAS HORIZONTALES SUPERIORES (ALERONES DE CULATA) -->
-          ${drawDimH(ox - eGable_px, ox, oy - eLat_px - 14, '0.60')}
-          ${drawDimH(ox + gL_px, ox + gL_px + eGable_px, oy - eLat_px - 14, '0.60')}
+          ${drawDimH(ox - eGable_px, ox, oy - eLat_px - 14, GABLE_OVERHANG.toFixed(2))}
+          ${drawDimH(ox + gL_px, ox + gL_px + eGable_px, oy - eLat_px - 14, GABLE_OVERHANG.toFixed(2))}
 
           <!-- Pendiente de piso -->
           <text x="${ox + 40}" y="${oy + gW_px/2 + 25}" font-size="10.5" font-weight="bold" fill="#0f172a">Pendiente Piso 1.0%</text>
@@ -649,20 +695,21 @@
     // ==========================================
     function getFrontalSVG() {
       const W = currentWidth;
-      const totalRoofW = W + 2.40;
+      const totalRoofW = W + 2 * EAVE_OVERHANG;
 
-      const sc = Math.min(68, 560 / totalRoofW);
+      const VSCALE = 68;
+      const sc = Math.min(VSCALE, 560 / totalRoofW);
       const gW_px = W * sc;
-      const oH_px = 1.20 * sc;
+      const oH_px = EAVE_OVERHANG * sc;
       const secX = (920 - gW_px) / 2;
       const secY = 385;
 
-      const flrH = 0.20 * 68;
-      const blkH = 0.40 * 68;
-      const eavH = 3.00 * 68;
-      const lowRidgeH = 3.70 * 68;
-      const highRidgeH = 4.00 * 68;
-      const overlap_px = 0.40 * sc;
+      const flrH = FLOOR_H * VSCALE;
+      const blkH = WALL_H * VSCALE;
+      const eavH = EAVE_H * VSCALE;
+      const lowRidgeH = RIDGE_LOW_H * VSCALE;
+      const highRidgeH = RIDGE_HIGH_H * VSCALE;
+      const overlap_px = OVERLAP * sc;
 
       const midX = secX + gW_px / 2;
       const eaveY = secY - flrH - eavH;
@@ -678,8 +725,8 @@
       const overlapTipY = highRidgeY - overlap_px * rightSlope;
 
       // PUERTA FRONTAL ESTÁNDAR (1.00 x 2.10 m)
-      const doorW_px = 1.00 * sc;
-      const doorH_px = 2.10 * 68;
+      const doorW_px = DOOR_W * sc;
+      const doorH_px = DOOR_H * VSCALE;
       const doorLeftX = midX - doorW_px / 2;
       const doorTopY = secY - flrH - doorH_px;
 
@@ -695,7 +742,7 @@
           <polygon points="${secX + gW_px},${secY - flrH} ${secX + gW_px + 35},${secY} ${secX + gW_px},${secY}" fill="#e2e8f0" stroke="#334155" stroke-width="0.8"/>
           <text x="40" y="${secY - flrH - 5}" fill="#0284c7" font-size="11" font-weight="bold">NPT +0.20</text>
 
-          <!-- Pared de Culata: Muro de bloques 0.40m a los lados de la puerta -->
+          <!-- Pared de Culata: Muro de bloques 0.30 m a los lados de la puerta -->
           <rect x="${secX}" y="${secY - flrH - blkH}" width="${doorLeftX - secX}" height="${blkH}" fill="#94a3b8" stroke="#1e293b" stroke-width="1.2"/>
           <rect x="${doorLeftX + doorW_px}" y="${secY - flrH - blkH}" width="${secX + gW_px - (doorLeftX + doorW_px)}" height="${blkH}" fill="#94a3b8" stroke="#1e293b" stroke-width="1.2"/>
 
@@ -723,8 +770,8 @@
           ${drawDimH(doorLeftX, doorLeftX + doorW_px, secY - flrH + 22, '1.00')}
           ${drawDimV(secY - flrH, doorTopY, doorLeftX - 16, '2.10', '#4f46e5', '#ffffff')}
           
-          <rect x="${midX - 55}" y="${doorTopY - 26}" width="110" height="20" fill="#ffffff" rx="4" stroke="#6366f1" stroke-width="1.2"/>
-          <text x="${midX}" y="${doorTopY - 12}" fill="#3730a3" font-size="10.5" font-weight="bold" text-anchor="middle">PUERTA P-1 (1.00 x 2.10 m)</text>
+          <rect x="${midX - 82}" y="${doorTopY - 26}" width="164" height="20" fill="#ffffff" rx="4" stroke="#6366f1" stroke-width="1.2"/>
+          <text x="${midX}" y="${doorTopY - 12}" fill="#3730a3" font-size="10" font-weight="bold" text-anchor="middle">PUERTA P-1 (1.00 x 2.10 m)</text>
 
           <!-- ABERTURA CENITAL DE CUMBRERA (0.30m) -->
           <rect x="${midX - 2}" y="${highRidgeY}" width="4" height="${lowRidgeY - highRidgeY}" fill="#10b981"/>
@@ -738,15 +785,15 @@
           <line x1="${overlapTipX}" y1="${overlapTipY}" x2="${overlapTipX}" y2="${overlapTipY + 6}" stroke="#2563eb" stroke-width="2"/>
 
           <!-- COTAS HORIZONTALES SUPERIORES -->
-          ${drawDimH(secX - oH_px, secX, 52, '1.20')}
+          ${drawDimH(secX - oH_px, secX, 52, EAVE_OVERHANG.toFixed(2))}
           ${drawDimH(secX, secX + gW_px, 52, W.toFixed(2))}
-          ${drawDimH(secX + gW_px, secX + gW_px + oH_px, 52, '1.20')}
+          ${drawDimH(secX + gW_px, secX + gW_px + oH_px, 52, EAVE_OVERHANG.toFixed(2))}
           ${drawDimH(secX - oH_px, secX + gW_px + oH_px, 24, totalRoofW.toFixed(2))}
 
           <!-- COTAS VERTICALES DERECHAS -->
-          ${drawDimV(secY - flrH, eaveY, secX + gW_px + oH_px + 22, '3.00')}
-          ${drawDimV(secY - flrH, lowRidgeY, secX + gW_px + oH_px + 52, '3.70', '#dc2626')}
-          ${drawDimV(secY - flrH, highRidgeY, secX + gW_px + oH_px + 82, '4.00', '#2563eb')}
+          ${drawDimV(secY - flrH, eaveY, secX + gW_px + oH_px + 22, EAVE_H.toFixed(2))}
+          ${drawDimV(secY - flrH, lowRidgeY, secX + gW_px + oH_px + 52, RIDGE_LOW_H.toFixed(2), '#dc2626')}
+          ${drawDimV(secY - flrH, highRidgeY, secX + gW_px + oH_px + 82, RIDGE_HIGH_H.toFixed(2), '#2563eb')}
         </svg>
       `;
     }
@@ -756,20 +803,21 @@
     // ==========================================
     function getFachadaSVG() {
       const L = currentLength;
-      const totalRoofL = L + 1.20;
+      const totalRoofL = L + 2 * GABLE_OVERHANG;
 
+      const VSCALE = 64;
       const sc = Math.min(540 / totalRoofL, 46);
       const gL_px = L * sc;
-      const eGable_px = 0.60 * sc;
+      const eGable_px = GABLE_OVERHANG * sc;
       const longX = (920 - gL_px) / 2;
       const longY = 360;
 
-      const flrH = 0.20 * 64;
-      const blkH = 0.40 * 64;
-      const eavH = 3.00 * 64;
-      const lowRdH = 3.70 * 64;
-      const highRdH = 4.00 * 64;
-      const ventH = 0.30 * 64;
+      const flrH = FLOOR_H * VSCALE;
+      const blkH = WALL_H * VSCALE;
+      const eavH = EAVE_H * VSCALE;
+      const lowRdH = RIDGE_LOW_H * VSCALE;
+      const highRdH = RIDGE_HIGH_H * VSCALE;
+      const ventH = VENT_GAP * VSCALE;
 
       const numBays = Math.max(2, Math.round(L / 3.0));
       const baySpacing = L / numBays;
@@ -785,7 +833,7 @@
         if (i < numBays) {
           const nextX = longX + (i + 1) * baySpacing_px;
           meshSvg += `<rect x="${cx + 3.5}" y="${longY - flrH - eavH}" width="${baySpacing_px - 7}" height="${eavH - blkH}" fill="#f0f9ff" stroke="#38bdf8" stroke-width="0.8" stroke-dasharray="3 3"/>`;
-          baysSvg += drawDimH(cx, nextX, 48, baySpacing.toFixed(2));
+          baysSvg += drawDimH(cx, nextX, 54, baySpacing.toFixed(2));
         }
       }
 
@@ -799,7 +847,7 @@
           <rect x="${longX}" y="${longY - flrH}" width="${gL_px}" height="${flrH}" fill="#e2e8f0" stroke="#334155" stroke-width="1.2"/>
           <text x="40" y="${longY - flrH - 5}" fill="#0284c7" font-size="11" font-weight="bold">NPT +0.20</text>
 
-          <!-- Muro perimetral de bloque 0.40m -->
+          <!-- Muro perimetral de bloque 0.30 m -->
           <rect x="${longX}" y="${longY - flrH - blkH}" width="${gL_px}" height="${blkH}" fill="#94a3b8" stroke="#1e293b" stroke-width="1.2"/>
 
           <!-- Mallas antipájaros y columnas -->
@@ -812,23 +860,23 @@
           <!-- Banda de Abertura Cenital Continua (0.30m) -->
           <line x1="${longX - eGable_px}" y1="${longY - flrH - lowRdH}" x2="${longX + gL_px + eGable_px}" y2="${longY - flrH - lowRdH}" stroke="#64748b" stroke-width="1.2" stroke-dasharray="4 2"/>
           <rect x="${longX - eGable_px}" y="${longY - flrH - highRdH}" width="${gL_px + 2*eGable_px}" height="${ventH}" fill="#ecfdf5" stroke="#10b981" stroke-width="1.2" stroke-dasharray="3 2"/>
-          <text x="${longX + gL_px/2}" y="${longY - flrH - highRdH + ventH/2 + 4}" fill="#047857" font-size="10" font-weight="bold" text-anchor="middle">Abertura de Ventilación Continua (0.30 m)</text>
+          <text x="${longX + gL_px/2}" y="${longY - flrH - highRdH + ventH/2 + 4}" fill="#047857" font-size="10" font-weight="bold" text-anchor="middle">Abertura de Ventilación Continua (${VENT_GAP.toFixed(2)} m)</text>
 
           <!-- Cumbrera Alta (4.00m) -->
           <line x1="${longX - eGable_px}" y1="${longY - flrH - highRdH}" x2="${longX + gL_px + eGable_px}" y2="${longY - flrH - highRdH}" stroke="#2563eb" stroke-width="2.6"/>
 
           <!-- COTAS HORIZONTALES (ESCALONADAS PARA NO SALIRSE NI CHOCAR) -->
           ${baysSvg}
-          ${drawDimH(longX, longX + gL_px, 24, L.toFixed(2))}
-          ${drawDimH(longX - eGable_px, longX + gL_px + eGable_px, 6, totalRoofL.toFixed(2))}
-          ${drawDimH(longX - eGable_px, longX, 48, '0.60')}
-          ${drawDimH(longX + gL_px, longX + gL_px + eGable_px, 48, '0.60')}
+          ${drawDimH(longX, longX + gL_px, 32, L.toFixed(2))}
+          ${drawDimH(longX - eGable_px, longX + gL_px + eGable_px, 10, totalRoofL.toFixed(2))}
+          ${drawDimH(longX - eGable_px, longX, 54, GABLE_OVERHANG.toFixed(2))}
+          ${drawDimH(longX + gL_px, longX + gL_px + eGable_px, 54, GABLE_OVERHANG.toFixed(2))}
 
           <!-- COTAS VERTICALES DERECHAS -->
-          ${drawDimV(longY, longY - flrH, longX + gL_px + eGable_px + 20, '0.20', '#334155', '#ffffff', true)}
-          ${drawDimV(longY - flrH, longY - flrH - blkH, longX + gL_px + eGable_px + 20, '0.40', '#334155', '#ffffff', true)}
-          ${drawDimV(longY - flrH, longY - flrH - eavH, longX + gL_px + eGable_px + 52, '3.00')}
-          ${drawDimV(longY - flrH, longY - flrH - highRdH, longX + gL_px + eGable_px + 82, '4.00', '#2563eb')}
+          ${drawDimV(longY, longY - flrH, longX + gL_px + eGable_px + 20, FLOOR_H.toFixed(2), '#334155', '#ffffff', true)}
+          ${drawDimV(longY - flrH, longY - flrH - blkH, longX + gL_px + eGable_px + 20, WALL_H.toFixed(2), '#334155', '#ffffff', true)}
+          ${drawDimV(longY - flrH, longY - flrH - eavH, longX + gL_px + eGable_px + 52, EAVE_H.toFixed(2))}
+          ${drawDimV(longY - flrH, longY - flrH - highRdH, longX + gL_px + eGable_px + 82, RIDGE_HIGH_H.toFixed(2), '#2563eb')}
         </svg>
       `;
     }
@@ -837,57 +885,93 @@
     // 5. DETALLE CUMBRERA ASIMÉTRICA
     // ==========================================
     function getDetalleSVG() {
+      // Detalle dibujado a escala constante (170 px/m) y centrado en la cumbrera
+      const K = 170;
+      const W = currentWidth;
+      const cx = 460;
+      const yLow = 250;                        // cumbrera baja  +3.70 m
+      const yHigh = yLow - VENT_GAP * K;       // cumbrera alta +4.00 m
+
+      const sLow = (RIDGE_LOW_H - EAVE_H) / (W / 2);
+      const sHigh = (RIDGE_HIGH_H - EAVE_H) / (W / 2);
+
+      // Extremos visibles de cada vertiente (1.50 m a cada lado del eje)
+      const xL = cx - 1.5 * K;
+      const yL = yLow + 1.5 * sLow * K;
+      const xR = cx + 1.5 * K;
+      const yR = yHigh + 1.5 * sHigh * K;
+
+      // Punta del alero alto: traslapa OVERLAP sobre la vertiente baja
+      const xTip = cx - OVERLAP * K;
+      const yTip = yHigh + OVERLAP * sHigh * K;
+
+      const dimY = yHigh - 52;
+      const dimX = cx + 40;
+      const midVent = (yHigh + yLow) / 2;
+
+      // Malla antipájaros: retícula en X dentro de la abertura
+      let mesh = '';
+      for (let y = yHigh + 7; y < yLow; y += 9) {
+        mesh += `<line x1="${cx - 6}" y1="${y}" x2="${cx + 6}" y2="${y - 7}" stroke="#10b981" stroke-width="0.9"/>`;
+        mesh += `<line x1="${cx - 6}" y1="${y - 7}" x2="${cx + 6}" y2="${y}" stroke="#10b981" stroke-width="0.9"/>`;
+      }
+
       return `
         <svg viewBox="0 0 920 440" class="w-full max-w-4xl h-auto" style="min-width: 680px;" xmlns="http://www.w3.org/2000/svg">
-          <!-- Pilar central vertical (Negro) -->
-          <line x1="460" y1="350" x2="460" y2="250" stroke="#0f172a" stroke-width="5"/>
-          <text x="475" y="330" fill="#64748b" font-size="12" font-weight="bold">Columna Central</text>
+          <!-- Columna central que sostiene la cumbrera baja -->
+          <rect x="${cx - 4}" y="${yLow}" width="8" height="${395 - yLow}" fill="#0f172a"/>
+          <text x="${cx + 12}" y="${yLow + 72}" fill="#475569" font-size="11" font-weight="bold">Columna central</text>
 
-          <!-- Abertura vertical con malla antipájaros (0.30m en verde) -->
-          <line x1="460" y1="250" x2="460" y2="135" stroke="#10b981" stroke-width="4" stroke-dasharray="6 4"/>
-          <line x1="458" y1="250" x2="458" y2="135" stroke="#0f172a" stroke-width="1.5"/>
-          <text x="475" y="195" fill="#10b981" font-size="11.5" font-weight="bold">Malla Antipájaros</text>
+          <!-- Abertura vertical de ventilación con malla antipájaros -->
+          <rect x="${cx - 6}" y="${yHigh}" width="12" height="${yLow - yHigh}" fill="#ecfdf5" stroke="#10b981" stroke-width="1" stroke-dasharray="3 2"/>
+          ${mesh}
+          <line x1="${cx - 8}" y1="${yHigh}" x2="${cx + 8}" y2="${yHigh}" stroke="#10b981" stroke-width="2"/>
+          <line x1="${cx - 8}" y1="${yLow}" x2="${cx + 8}" y2="${yLow}" stroke="#10b981" stroke-width="2"/>
 
-          <!-- TECHO ROJO (Vertiente baja 3.70m) - LLEGA Y SE FIJA EXACTAMENTE EN X=460 -->
-          <line x1="120" y1="315" x2="460" y2="255" stroke="#475569" stroke-width="4"/>
-          <line x1="120" y1="250" x2="460" y2="250" stroke="#dc2626" stroke-width="5.5" stroke-linecap="round"/>
-          <circle cx="460" cy="250" r="5" fill="#dc2626"/>
+          <!-- Flechas de convección: el aire caliente escapa por la abertura -->
+          <path d="M ${cx - 62} ${yLow + 62} L ${cx - 34} ${yHigh + 20}" stroke="#f59e0b" stroke-width="2.6" stroke-dasharray="6 3"/>
+          <polygon points="${cx - 34},${yHigh + 12} ${cx - 40},${yHigh + 26} ${cx - 28},${yHigh + 26}" fill="#f59e0b"/>
 
-          <!-- TECHO AZUL (Vertiente alta 4.00m) - CONTINÚA Y TRASLAPA 0.40m HACIA LA IZQUIERDA (X=310) -->
-          <line x1="800" y1="205" x2="310" y2="95" stroke="#475569" stroke-width="4"/>
-          <line x1="800" y1="200" x2="310" y2="90" stroke="#2563eb" stroke-width="6.5" stroke-linecap="round"/>
-          <circle cx="800" cy="200" r="5" fill="#2563eb"/>
-          <circle cx="310" cy="90" r="5" fill="#2563eb"/>
-          <!-- Goterón en la punta -->
-          <line x1="310" y1="90" x2="310" y2="108" stroke="#2563eb" stroke-width="3.5"/>
+          <path d="M ${cx - 22} ${yLow + 34} L ${cx - 6} ${yHigh + 30}" stroke="#f59e0b" stroke-width="2.6" stroke-dasharray="6 3"/>
+          <polygon points="${cx - 6},${yHigh + 22} ${cx - 12},${yHigh + 36} ${cx},${yHigh + 36}" fill="#f59e0b"/>
 
-          <!-- ETIQUETAS DE ALTURA IDENTIFICATIVAS -->
-          <rect x="220" y="222" width="90" height="24" fill="#ffffff" rx="4" stroke="#fca5a5" stroke-width="1"/>
-          <text x="265" y="238" font-size="13" font-weight="bold" fill="#dc2626" text-anchor="middle">3.70 m</text>
+          <!-- TECHO ROJO: vertiente baja, termina en el eje -->
+          <line x1="${xL}" y1="${yL + 5}" x2="${cx}" y2="${yLow + 5}" stroke="#475569" stroke-width="4"/>
+          <line x1="${xL}" y1="${yL}" x2="${cx}" y2="${yLow}" stroke="#dc2626" stroke-width="6" stroke-linecap="round"/>
+          <circle cx="${cx}" cy="${yLow}" r="4" fill="#dc2626"/>
 
-          <rect x="630" y="132" width="90" height="24" fill="#ffffff" rx="4" stroke="#93c5fd" stroke-width="1"/>
-          <text x="675" y="148" font-size="13" font-weight="bold" fill="#2563eb" text-anchor="middle">4.00 m</text>
+          <!-- TECHO AZUL: vertiente alta, traslapa sobre la baja -->
+          <line x1="${xR}" y1="${yR + 5}" x2="${xTip}" y2="${yTip + 5}" stroke="#475569" stroke-width="4"/>
+          <line x1="${xR}" y1="${yR}" x2="${xTip}" y2="${yTip}" stroke="#2563eb" stroke-width="6.5" stroke-linecap="round"/>
+          <circle cx="${xTip}" cy="${yTip}" r="4.5" fill="#2563eb"/>
+          <!-- Goterón del alero alto -->
+          <line x1="${xTip}" y1="${yTip}" x2="${xTip}" y2="${yTip + 16}" stroke="#2563eb" stroke-width="3"/>
 
-          <!-- COTA DE TRASLAPE 0.40m (EN AZUL) -->
-          <line x1="310" y1="62" x2="460" y2="62" stroke="#2563eb" stroke-width="1.8"/>
-          <line x1="310" y1="52" x2="310" y2="72" stroke="#2563eb" stroke-width="2"/>
-          <line x1="460" y1="52" x2="460" y2="72" stroke="#2563eb" stroke-width="2"/>
-          <rect x="360" y="49" width="50" height="26" fill="#ffffff" rx="4" stroke="#2563eb" stroke-width="1.5"/>
-          <text x="385" y="67" font-size="13.5" font-weight="bold" fill="#2563eb" text-anchor="middle">0.40</text>
+          <!-- Etiquetas de altura de cada cumbrera -->
+          <rect x="${xL - 10}" y="${yL + 16}" width="86" height="22" fill="#ffffff" rx="4" stroke="#fca5a5" stroke-width="1"/>
+          <text x="${xL + 33}" y="${yL + 31}" font-size="12.5" font-weight="bold" fill="#dc2626" text-anchor="middle">${RIDGE_LOW_H.toFixed(2)} m</text>
 
-          <!-- COTA DE ABERTURA VERTICAL 0.30m (EN VERDE) -->
-          <line x1="590" y1="135" x2="590" y2="250" stroke="#10b981" stroke-width="1.8"/>
-          <line x1="580" y1="135" x2="600" y2="135" stroke="#10b981" stroke-width="2"/>
-          <line x1="580" y1="250" x2="600" y2="250" stroke="#10b981" stroke-width="2"/>
-          <rect x="605" y="180" width="50" height="26" fill="#ffffff" rx="4" stroke="#10b981" stroke-width="1.5"/>
-          <text x="630" y="198" font-size="13.5" font-weight="bold" fill="#10b981" text-anchor="middle">0.30</text>
+          <rect x="${cx + 78}" y="${yHigh - 44}" width="86" height="22" fill="#ffffff" rx="4" stroke="#93c5fd" stroke-width="1"/>
+          <text x="${cx + 121}" y="${yHigh - 29}" font-size="12.5" font-weight="bold" fill="#2563eb" text-anchor="middle">${RIDGE_HIGH_H.toFixed(2)} m</text>
 
-          <!-- FLECHAS DE FLUJO DE AIRE CALIENTE (CONVECCIÓN CENITAL) -->
-          <path d="M 405 285 L 435 175" stroke="#f59e0b" stroke-width="2.8" stroke-dasharray="6 3"/>
-          <polygon points="435,165 428,178 441,175" fill="#f59e0b"/>
-          
-          <path d="M 435 300 L 455 190" stroke="#f59e0b" stroke-width="2.8" stroke-dasharray="6 3"/>
-          <polygon points="455,180 448,193 461,190" fill="#f59e0b"/>
+          <!-- Cota del traslape, con líneas de referencia a las dos cumbreras -->
+          <line x1="${xTip}" y1="${yTip - 6}" x2="${xTip}" y2="${dimY + 6}" stroke="#93c5fd" stroke-width="0.9" stroke-dasharray="3 2"/>
+          <line x1="${cx}" y1="${yHigh - 6}" x2="${cx}" y2="${dimY + 6}" stroke="#93c5fd" stroke-width="0.9" stroke-dasharray="3 2"/>
+          <line x1="${xTip}" y1="${dimY}" x2="${cx}" y2="${dimY}" stroke="#2563eb" stroke-width="1.6"/>
+          <line x1="${xTip}" y1="${dimY - 7}" x2="${xTip}" y2="${dimY + 7}" stroke="#2563eb" stroke-width="2"/>
+          <line x1="${cx}" y1="${dimY - 7}" x2="${cx}" y2="${dimY + 7}" stroke="#2563eb" stroke-width="2"/>
+          <rect x="${(xTip + cx) / 2 - 24}" y="${dimY - 26}" width="48" height="22" fill="#ffffff" rx="4" stroke="#2563eb" stroke-width="1.2"/>
+          <text x="${(xTip + cx) / 2}" y="${dimY - 11}" font-size="12.5" font-weight="bold" fill="#2563eb" text-anchor="middle">${OVERLAP.toFixed(2)}</text>
+
+          <!-- Cota de la abertura cenital -->
+          <line x1="${dimX}" y1="${yHigh}" x2="${dimX}" y2="${yLow}" stroke="#10b981" stroke-width="1.6"/>
+          <line x1="${dimX - 7}" y1="${yHigh}" x2="${dimX + 7}" y2="${yHigh}" stroke="#10b981" stroke-width="2"/>
+          <line x1="${dimX - 7}" y1="${yLow}" x2="${dimX + 7}" y2="${yLow}" stroke="#10b981" stroke-width="2"/>
+          <rect x="${dimX + 8}" y="${midVent - 11}" width="48" height="22" fill="#ffffff" rx="4" stroke="#10b981" stroke-width="1.2"/>
+          <text x="${dimX + 32}" y="${midVent + 4}" font-size="12.5" font-weight="bold" fill="#10b981" text-anchor="middle">${VENT_GAP.toFixed(2)}</text>
+
+          <!-- Leyenda del detalle -->
+          <text x="40" y="424" fill="#475569" font-size="10.5" font-weight="bold">Detalle de cumbrera: abertura cenital ${VENT_GAP.toFixed(2)} m con malla antipájaros · traslape ${OVERLAP.toFixed(2)} m</text>
         </svg>
       `;
     }
@@ -895,31 +979,46 @@
     // ==========================================
     // EXPORTACIÓN A PDF (DIRECTO CON jsPDF & CANVAS)
     // ==========================================
-    function svgToCanvas(svgString, width = 2400, height = 1200) {
+    // Ancho de la caja donde se dibuja el plano dentro del A4 (mm)
+    const PDF_BOX = { x: 10, y: 24, w: 277, h: 168 };
+    // Relación de aspecto de los planos (viewBox 920 x 440)
+    const PLAN_ASPECT = 440 / 920;
+
+    function fitPlanInBox(pdf, imgData) {
+      // Conserva la proporción del plano y lo centra en la caja (evita deformación)
+      const imgH = PDF_BOX.w * PLAN_ASPECT;
+      const imgY = PDF_BOX.y + (PDF_BOX.h - imgH) / 2;
+      pdf.addImage(imgData, 'JPEG', PDF_BOX.x, imgY, PDF_BOX.w, imgH);
+    }
+
+    function svgToCanvas(svgString, width = 2400) {
+      const height = Math.round(width * PLAN_ASPECT);
       return new Promise((resolve, reject) => {
         const img = new Image();
-        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-        const URL = window.URL || window.webkitURL || window;
-        const blobURL = URL.createObjectURL(svgBlob);
+        // Fija el tamaño intrínseco del SVG para que el rasterizado sea exacto
+        const sizedSvg = svgString.replace('<svg ', '<svg width="920" height="440" ');
+        const svgBlob = new Blob([sizedSvg], { type: 'image/svg+xml;charset=utf-8' });
+        const urlApi = window.URL || window.webkitURL;
+        const blobURL = urlApi.createObjectURL(svgBlob);
 
         img.onload = () => {
           const canvas = document.createElement('canvas');
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
-          
+
           // Fondo blanco arquitectónico
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(0, 0, width, height);
 
-          // Dibujar SVG centrado
+          // El canvas conserva la proporción del SVG, así que no hay distorsión
           ctx.drawImage(img, 0, 0, width, height);
-          URL.revokeObjectURL(blobURL);
+          urlApi.revokeObjectURL(blobURL);
           resolve(canvas);
         };
 
         img.onerror = (e) => {
-          URL.revokeObjectURL(blobURL);
+          urlApi.revokeObjectURL(blobURL);
           reject(e);
         };
 
@@ -945,7 +1044,7 @@
         const svgElem = container.querySelector('svg');
         if (!svgElem) throw new Error('No se encontró el plano activo');
 
-        const canvas = await svgToCanvas(svgElem.outerHTML, 2400, 1150);
+        const canvas = await svgToCanvas(svgElem.outerHTML, 2400);
         const imgData = canvas.toDataURL('image/jpeg', 0.95);
 
         const { jsPDF } = window.jspdf;
@@ -966,12 +1065,12 @@
         pdf.setFontSize(8.5);
         pdf.setFont('helvetica', 'normal');
         pdf.text(`Medidas: ${currentWidth.toFixed(2)} x ${currentLength.toFixed(2)} m (${(currentWidth * currentLength).toFixed(1)} m²) | Capacidad: ${Math.floor(currentWidth * currentLength * currentDensity)} gallinas`, 14, 19.5);
-        
+
         pdf.setFont('helvetica', 'bold');
-        pdf.text(`LÁMINA: ${currentTab.toUpperCase()}`, 282, 17, { align: 'right' });
+        pdf.text(`LÁMINA: ${SHEET_TITLES[currentTab] || currentTab.toUpperCase()}`, 282, 17, { align: 'right' });
 
         // Plano Gráfico Central
-        pdf.addImage(imgData, 'JPEG', 10, 24, 277, 168);
+        fitPlanInBox(pdf, imgData);
 
         // Pie de Página Técnico
         pdf.setDrawColor(203, 213, 225);
@@ -979,10 +1078,10 @@
         pdf.setFontSize(7.5);
         pdf.setTextColor(71, 85, 105);
         pdf.setFont('helvetica', 'normal');
-        pdf.text('Especificaciones: Techo asimétrico desfasado | Ventilación 0.30 m | Traslape 0.40 m | Puerta P-1 1.00 x 2.10 m | Muro 0.40 m | Piso +0.20 m (1.0%)', 14, 202);
+        pdf.text(`Especificaciones: Techo asimétrico desfasado | Ventilación ${VENT_GAP.toFixed(2)} m | Traslape ${OVERLAP.toFixed(2)} m | Puerta P-1 ${DOOR_W.toFixed(2)} x ${DOOR_H.toFixed(2)} m | Muro ${WALL_H.toFixed(2)} m | Piso +${FLOOR_H.toFixed(2)} m (1.0%)`, 14, 202);
         pdf.text('Cotas en metros (m) - Escala indicativa', 282, 202, { align: 'right' });
 
-        const fileName = `Plano_Galpon_${currentTab}_${currentWidth}x${currentLength}m.pdf`;
+        const fileName = `Plano_Galpon_${currentTab}_${currentWidth.toFixed(1)}x${currentLength.toFixed(1)}m.pdf`;
         pdf.save(fileName);
         showToast(`¡PDF descargado: ${fileName}!`, true);
       } catch (err) {
@@ -1005,15 +1104,16 @@
       try {
         if (!window.jspdf || !window.jspdf.jsPDF) {
           window.print();
+          showToast('jsPDF no disponible: abriendo diálogo de impresión', false);
           return;
         }
 
         const sheets = [
-          { id: 'corte', title: 'CORTE TRANSVERSAL ASIMÉTRICO', getSvg: getCorteSVG },
-          { id: 'planta', title: 'PLANTA ARQUITECTÓNICA CON PUERTA FRONTAL', getSvg: getPlantaSVG },
-          { id: 'frontal', title: 'FACHADA FRONTAL CON PUERTA ESTÁNDAR 1.00 x 2.10 m', getSvg: getFrontalSVG },
-          { id: 'fachada', title: 'FACHADA LATERAL LONGITUDINAL', getSvg: getFachadaSVG },
-          { id: 'detalle', title: 'DETALLE CUMBRERA DESFASADA 0.30m / 0.40m', getSvg: getDetalleSVG }
+          { id: 'corte', title: SHEET_TITLES.corte, getSvg: getCorteSVG },
+          { id: 'planta', title: SHEET_TITLES.planta, getSvg: getPlantaSVG },
+          { id: 'frontal', title: SHEET_TITLES.frontal, getSvg: getFrontalSVG },
+          { id: 'fachada', title: SHEET_TITLES.fachada, getSvg: getFachadaSVG },
+          { id: 'detalle', title: SHEET_TITLES.detalle, getSvg: getDetalleSVG }
         ];
 
         const { jsPDF } = window.jspdf;
@@ -1027,7 +1127,7 @@
           const sheet = sheets[i];
           if (i > 0) pdf.addPage('a4', 'landscape');
 
-          const canvas = await svgToCanvas(sheet.getSvg(), 2400, 1150);
+          const canvas = await svgToCanvas(sheet.getSvg(), 2400);
           const imgData = canvas.toDataURL('image/jpeg', 0.95);
 
           // Membrete Superior
@@ -1045,7 +1145,7 @@
           pdf.text(`LÁMINA ${i + 1} DE 5`, 282, 17, { align: 'right' });
 
           // Gráfico
-          pdf.addImage(imgData, 'JPEG', 10, 24, 277, 168);
+          fitPlanInBox(pdf, imgData);
 
           // Pie de Página
           pdf.setDrawColor(203, 213, 225);
@@ -1057,12 +1157,13 @@
           pdf.text(`Lámina ${i + 1}/5 - Cotas en metros (m)`, 282, 202, { align: 'right' });
         }
 
-        const fileName = `Juego_Completo_Galpon_${currentWidth}x${currentLength}m.pdf`;
+        const fileName = `Juego_Completo_Galpon_${currentWidth.toFixed(1)}x${currentLength.toFixed(1)}m.pdf`;
         pdf.save(fileName);
         showToast(`¡Juego completo descargado (5 láminas)!`, true);
       } catch (err) {
         console.error('Error generando dossier completo:', err);
         window.print();
+        showToast('Abriendo ventana de impresión como PDF', false);
       } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
