@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plano Paramétrico Galpón Avícola - Techo Asimétrico</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- jsPDF for direct PDF download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    .tab-btn.active {
+      background-color: #0284c7;
+      color: #ffffff;
+      font-weight: 600;
+      border-color: #0284c7;
+    }
+    svg text {
+      user-select: none;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    @media print {
+      body {
+        background: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      header, nav, footer, .no-print {
+        display: none !important;
+      }
+      main {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+      }
+      #svg-container {
+        border: none !important;
+        background: #ffffff !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+      #print-title-block {
+        display: block !important;
+      }
+      @page {
+        size: landscape;
+        margin: 8mm;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased p-2 sm:p-5">
+  <div class="max-w-5xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden">
+    
+    <!-- Top Control Panel (Ancho y Largo Dinámicos + PDF Download) -->
+    <header class="p-3 sm:p-5 border-b border-slate-200 bg-slate-50 no-print">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <h1 class="text-base sm:text-lg font-bold text-slate-900">
+              Plano Dinámico: Galpón Avícola (Techo Asimétrico / Desfasado)
+            </h1>
+          </div>
+          <p class="text-xs text-slate-500">
+            Cálculo paramétrico en tiempo real, puerta frontal estándar (1.00 x 2.10 m) y descarga en PDF
+          </p>
+        </div>
+
+        <!-- Action Buttons (Descargar PDF & Imprimir) -->
+        <div class="flex items-center gap-2">
+          <!-- Button: Descargar PDF Actual -->
+          <button onclick="downloadActiveSheetPDF()" id="btn-download-pdf" 
+                  class="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span>Descargar PDF</span>
+          </button>
+
+          <!-- Button: Descargar Todas las Láminas (Dossier Completo) -->
+          <button onclick="downloadAllSheetsPDF()" id="btn-download-all" 
+                  class="flex items-center gap-1.5 px-3 py-2 bg-sky-700 hover:bg-sky-800 text-white text-xs font-bold rounded-xl shadow transition active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+            </svg>
+            <span class="hidden sm:inline">Juego Completo (5 Láminas)</span>
+            <span class="sm:hidden">5 Láminas</span>
+          </button>
+
+          <!-- Button: Imprimir / Guardar PDF Nativo -->
+          <button onclick="window.print()" title="Imprimir / Guardar como PDF en alta resolución" 
+                  class="p-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl shadow-sm transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Calculation Badges -->
+      <div class="flex flex-wrap items-center gap-1.5 text-xs mb-3">
+        <span class="px-2.5 py-1 rounded-lg bg-slate-200 font-semibold text-slate-700" id="badge-area">
+          Área: 72.0 m²
+        </span>
+        <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-bold border border-emerald-300" id="badge-aves">
+          360 gallinas (5.0/m²)
+        </span>
+        <span class="px-2.5 py-1 rounded-lg bg-slate-200 text-slate-600 font-medium" id="badge-techo">
+          Techo: 8.40 x 13.20 m
+        </span>
+        <span class="px-2.5 py-1 rounded-lg bg-indigo-100 text-indigo-800 font-semibold border border-indigo-200">
+          Puerta P-1: 1.00 x 2.10 m
+        </span>
+      </div>
+
+      <!-- Inputs for Ancho and Largo -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 pt-1">
+        <!-- Ancho -->
+        <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between gap-2">
+          <label for="input-ancho" class="text-xs font-bold text-slate-700 whitespace-nowrap">
+            Ancho (m):
+          </label>
+          <div class="flex items-center gap-1">
+            <input type="number" id="input-ancho" value="6.0" min="4.0" max="14.0" step="0.5" 
+                   oninput="updateDimensions()" 
+                   class="w-20 px-2 py-1 text-sm font-bold text-center rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-sky-500 outline-none">
+            <span class="text-xs text-slate-400 font-medium">m</span>
+          </div>
+        </div>
+
+        <!-- Largo -->
+        <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between gap-2">
+          <label for="input-largo" class="text-xs font-bold text-slate-700 whitespace-nowrap">
+            Largo (m):
+          </label>
+          <div class="flex items-center gap-1">
+            <input type="number" id="input-largo" value="12.0" min="6.0" max="40.0" step="1.0" 
+                   oninput="updateDimensions()" 
+                   class="w-20 px-2 py-1 text-sm font-bold text-center rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-sky-500 outline-none">
+            <span class="text-xs text-slate-400 font-medium">m</span>
+          </div>
+        </div>
+
+        <!-- Densidad (Aves / m2) -->
+        <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between gap-2">
+          <label for="input-densidad" class="text-xs font-bold text-slate-700 whitespace-nowrap">
+            Densidad:
+          </label>
+          <div class="flex items-center gap-1">
+            <input type="number" id="input-densidad" value="5.0" min="3.0" max="8.0" step="0.5" 
+                   oninput="updateDimensions()" 
+                   class="w-16 px-2 py-1 text-sm font-bold text-center rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-sky-500 outline-none">
+            <span class="text-xs text-slate-400 font-medium">aves/m²</span>
+          </div>
+        </div>
+
+        <!-- Quick Presets -->
+        <div class="flex items-center gap-1">
+          <button onclick="setPreset(6, 12)" class="flex-1 py-1.5 px-2 text-xs rounded-lg border border-slate-200 bg-white hover:bg-sky-600 hover:text-white transition font-medium shadow-sm">
+            6x12 (360)
+          </button>
+          <button onclick="setPreset(7, 14)" class="flex-1 py-1.5 px-2 text-xs rounded-lg border border-slate-200 bg-white hover:bg-sky-600 hover:text-white transition font-medium shadow-sm">
+            7x14 (490)
+          </button>
+          <button onclick="setPreset(8, 16)" class="flex-1 py-1.5 px-2 text-xs rounded-lg border border-slate-200 bg-white hover:bg-sky-600 hover:text-white transition font-medium shadow-sm">
+            8x16 (640)
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs (5 Vistas Técnicas) -->
+    <nav class="flex border-b border-slate-200 bg-white px-3 pt-2 gap-1 overflow-x-auto text-xs sm:text-sm no-print">
+      <button onclick="setTab('corte')" id="btn-corte" class="tab-btn active px-3 sm:px-4 py-2 rounded-t-lg transition flex items-center gap-1.5">
+        <span>Corte Transversal</span>
+      </button>
+      <button onclick="setTab('planta')" id="btn-planta" class="tab-btn px-3 sm:px-4 py-2 rounded-t-lg transition text-slate-500 hover:text-slate-900 flex items-center gap-1.5">
+        <span>Planta Arquitectónica</span>
+      </button>
+      <button onclick="setTab('frontal')" id="btn-frontal" class="tab-btn px-3 sm:px-4 py-2 rounded-t-lg transition text-slate-500 hover:text-slate-900 flex items-center gap-1.5">
+        <span>Fachada Frontal (Puerta)</span>
+      </button>
+      <button onclick="setTab('fachada')" id="btn-fachada" class="tab-btn px-3 sm:px-4 py-2 rounded-t-lg transition text-slate-500 hover:text-slate-900 flex items-center gap-1.5">
+        <span>Fachada Lateral</span>
+      </button>
+      <button onclick="setTab('detalle')" id="btn-detalle" class="tab-btn px-3 sm:px-4 py-2 rounded-t-lg transition text-slate-500 hover:text-slate-900 flex items-center gap-1.5">
+        <span>Detalle Cumbrera</span>
+      </button>
+    </nav>
+
+    <!-- Printable Header / Membrete (Hidden on screen, visible on print) -->
+    <div id="print-title-block" class="hidden p-3 border-b-2 border-slate-800 bg-white mb-2">
+      <div class="flex justify-between items-center text-xs">
+        <div>
+          <h2 class="text-base font-bold text-slate-900 uppercase tracking-wide">PLANO ARQUITECTÓNICO - GALPÓN AVÍCOLA</h2>
+          <p class="text-slate-600 font-semibold" id="print-sheet-title">LÁMINA: CORTE TRANSVERSAL</p>
+        </div>
+        <div class="text-right">
+          <p class="font-bold text-slate-800" id="print-sheet-dims">Dimensiones: 6.00 x 12.00 m (72.0 m²)</p>
+          <p class="text-slate-600" id="print-sheet-capacity">Capacidad: 360 gallinas | Clima Cálido</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dynamic Canvas Main View -->
+    <main class="p-2 sm:p-5 bg-white flex flex-col items-center justify-center">
+      <div id="svg-container" class="w-full overflow-x-auto flex justify-center border border-slate-200 rounded-xl bg-slate-50 p-2 sm:p-4 min-h-[420px]">
+        <!-- Injected via JavaScript -->
+      </div>
+    </main>
+
+    <!-- Footer Specs Bar -->
+    <footer class="p-3 bg-slate-50 border-t border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs no-print">
+      <div class="p-2 rounded-lg bg-white border border-slate-200">
+        <span class="text-slate-500 text-[11px] block">Alerones Laterales</span>
+        <strong class="text-slate-800 text-sm">1.20 m (cada lado)</strong>
+      </div>
+      <div class="p-2 rounded-lg bg-white border border-slate-200">
+        <span class="text-slate-500 text-[11px] block">Puerta Frontal Estándar</span>
+        <strong class="text-indigo-700 font-bold text-sm">1.00 x 2.10 m (P-1)</strong>
+      </div>
+      <div class="p-2 rounded-lg bg-white border border-slate-200">
+        <span class="text-slate-500 text-[11px] block">Abertura de Ventilación</span>
+        <strong class="text-emerald-700 font-bold text-sm">0.30 m (Traslape 0.40 m)</strong>
+      </div>
+      <div class="p-2 rounded-lg bg-white border border-slate-200">
+        <span class="text-slate-500 text-[11px] block">Pared & Piso</span>
+        <strong class="text-slate-800 text-sm">Muro 0.40 m | Piso +0.20 m (1.0%)</strong>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none z-50">
+    <span id="toast-icon">✓</span>
+    <span id="toast-msg">Mensaje</span>
+  </div>
+
+  <script>
+    let currentTab = 'corte';
+    let currentWidth = 6.0;
+    let currentLength = 12.0;
+    let currentDensity = 5.0;
+
+    function setTab(tabId) {
+      currentTab = tabId;
+      ['corte', 'planta', 'frontal', 'fachada', 'detalle'].forEach(id => {
+        const btn = document.getElementById('btn-' + id);
+        if (btn) {
+          if (id === tabId) {
+            btn.classList.add('active');
+            btn.classList.remove('text-slate-500');
+          } else {
+            btn.classList.remove('active');
+            btn.classList.add('text-slate-500');
+          }
+        }
+      });
+      updatePrintHeader();
+      renderCurrentView();
+    }
+
+    function setPreset(w, l) {
+      document.getElementById('input-ancho').value = w.toFixed(1);
+      document.getElementById('input-largo').value = l.toFixed(1);
+      updateDimensions();
+    }
+
+    function showToast(msg, isSuccess = true) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-msg');
+      const toastIcon = document.getElementById('toast-icon');
+      toastMsg.innerText = msg;
+      toastIcon.innerText = isSuccess ? '✓' : 'ℹ';
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3500);
+    }
+
+    function updateDimensions() {
+      const wVal = parseFloat(document.getElementById('input-ancho').value);
+      const lVal = parseFloat(document.getElementById('input-largo').value);
+      const dVal = parseFloat(document.getElementById('input-densidad').value);
+
+      if (!isNaN(wVal) && wVal >= 3.0) currentWidth = wVal;
+      if (!isNaN(lVal) && lVal >= 4.0) currentLength = lVal;
+      if (!isNaN(dVal) && dVal > 0) currentDensity = dVal;
+
+      const area = currentWidth * currentLength;
+      const aves = Math.floor(area * currentDensity);
+      const anchoTecho = (currentWidth + 2.40).toFixed(2);
+      const largoTecho = (currentLength + 1.20).toFixed(2);
+
+      document.getElementById('badge-area').innerText = `Área: ${area.toFixed(1)} m²`;
+      document.getElementById('badge-aves').innerText = `${aves} gallinas (${currentDensity.toFixed(1)}/m²)`;
+      document.getElementById('badge-techo').innerText = `Techo: ${anchoTecho} x ${largoTecho} m`;
+
+      updatePrintHeader();
+      renderCurrentView();
+    }
+
+    function updatePrintHeader() {
+      const titles = {
+        'corte': 'LÁMINA 1: CORTE TRANSVERSAL (TECHO ASIMÉTRICO / DESFASADO)',
+        'planta': 'LÁMINA 2: PLANTA ARQUITECTÓNICA Y ESTRUCTURAL CON PUERTA FRONTAL',
+        'frontal': 'LÁMINA 3: FACHADA FRONTAL / CULATA CON PUERTA ESTÁNDAR (1.00 x 2.10 m)',
+        'fachada': 'LÁMINA 4: FACHADA LATERAL LONGITUDINAL CON VENTILACIÓN CENITAL',
+        'detalle': 'LÁMINA 5: DETALLE TÉCNICO DE CUMBRERA DESFASADA'
+      };
+      const titleElem = document.getElementById('print-sheet-title');
+      const dimsElem = document.getElementById('print-sheet-dims');
+      const capElem = document.getElementById('print-sheet-capacity');
+      if (titleElem) titleElem.innerText = titles[currentTab] || 'PLANO ARQUITECTÓNICO';
+      if (dimsElem) dimsElem.innerText = `Dimensiones: ${currentWidth.toFixed(2)} x ${currentLength.toFixed(2)} m (${(currentWidth * currentLength).toFixed(1)} m²)`;
+      if (capElem) capElem.innerText = `Capacidad: ${Math.floor(currentWidth * currentLength * currentDensity)} gallinas (${currentDensity.toFixed(1)} aves/m²)`;
+    }
+
+    // DIMENSION HELPER FUNCTIONS CON MASKS Y TEXT PROTECTORS PARA EVITAR SOLAPAMIENTOS
+    function drawDimH(x1, x2, y, val, color = "#1e293b", badgeBg = "#ffffff") {
+      const minX = Math.min(x1, x2);
+      const maxX = Math.max(x1, x2);
+      const midX = (x1 + x2) / 2;
+      const valStr = String(val);
+      const textW = Math.max(30, valStr.length * 7.5 + 8);
+      return `
+        <g class="dim-h">
+          <line x1="${minX}" y1="${y}" x2="${maxX}" y2="${y}" stroke="${color}" stroke-width="1.2"/>
+          <line x1="${minX}" y1="${y - 4.5}" x2="${minX}" y2="${y + 4.5}" stroke="${color}" stroke-width="1.3"/>
+          <line x1="${maxX}" y1="${y - 4.5}" x2="${maxX}" y2="${y + 4.5}" stroke="${color}" stroke-width="1.3"/>
+          <rect x="${midX - textW/2}" y="${y - 7.5}" width="${textW}" height="15" fill="${badgeBg}" rx="3" stroke="#cbd5e1" stroke-width="0.8"/>
+          <text x="${midX}" y="${y + 3.5}" fill="${color}" font-size="10.5" font-weight="bold" text-anchor="middle">${valStr}</text>
+        </g>
+      `;
+    }
+
+    function drawDimV(y1, y2, x, val, color = "#1e293b", badgeBg = "#ffffff", forceOffset = false) {
+      const minY = Math.min(y1, y2);
+      const maxY = Math.max(y1, y2);
+      const midY = (y1 + y2) / 2;
+      const span = maxY - minY;
+      const valStr = String(val);
+      const textW = Math.max(26, valStr.length * 7.2 + 8);
+
+      // Si el tramo es muy pequeño (<32px como 0.20m o 0.40m), dibuja el badge horizontal a un lado con línea guía
+      if (span < 34 || forceOffset) {
+        return `
+          <g class="dim-v">
+            <line x1="${x}" y1="${minY}" x2="${x}" y2="${maxY}" stroke="${color}" stroke-width="1.2"/>
+            <line x1="${x - 4}" y1="${minY}" x2="${x + 4}" y2="${minY}" stroke="${color}" stroke-width="1.3"/>
+            <line x1="${x - 4}" y1="${maxY}" x2="${x + 4}" y2="${maxY}" stroke="${color}" stroke-width="1.3"/>
+            <line x1="${x}" y1="${midY}" x2="${x + 6}" y2="${midY}" stroke="${color}" stroke-width="0.9"/>
+            <rect x="${x + 6}" y="${midY - 7.5}" width="${textW}" height="15" fill="${badgeBg}" rx="3" stroke="#cbd5e1" stroke-width="0.8"/>
+            <text x="${x + 6 + textW/2}" y="${midY + 3.5}" fill="${color}" font-size="10" font-weight="bold" text-anchor="middle">${valStr}</text>
+          </g>
+        `;
+      }
+
+      return `
+        <g class="dim-v">
+          <line x1="${x}" y1="${minY}" x2="${x}" y2="${maxY}" stroke="${color}" stroke-width="1.2"/>
+          <line x1="${x - 4.5}" y1="${minY}" x2="${x + 4.5}" y2="${minY}" stroke="${color}" stroke-width="1.3"/>
+          <line x1="${x - 4.5}" y1="${maxY}" x2="${x + 4.5}" y2="${maxY}" stroke="${color}" stroke-width="1.3"/>
+          <rect x="${x - 8}" y="${midY - textW/2}" width="16" height="${textW}" fill="${badgeBg}" rx="3" stroke="#cbd5e1" stroke-width="0.8"/>
+          <text x="${x}" y="${midY + 3.5}" fill="${color}" font-size="10.5" font-weight="bold" text-anchor="middle" transform="rotate(-90 ${x} ${midY})">${valStr}</text>
+        </g>
+      `;
+    }
+
+    function renderCurrentView() {
+      const container = document.getElementById('svg-container');
+      if (currentTab === 'corte') container.innerHTML = getCorteSVG();
+      else if (currentTab === 'planta') container.innerHTML = getPlantaSVG();
+      else if (currentTab === 'frontal') container.innerHTML = getFrontalSVG();
+      else if (currentTab === 'fachada') container.innerHTML = getFachadaSVG();
+      else if (currentTab === 'detalle') container.innerHTML = getDetalleSVG();
+    }
+
+    // ==========================================
+    // 1. CORTE TRANSVERSAL
+    // ==========================================
+    function getCorteSVG() {
+      const W = currentWidth;
+      const totalRoofW = W + 2.40;
+
+      const sc = Math.min(68, 560 / totalRoofW);
+      const gW_px = W * sc;
+      const oH_px = 1.20 * sc;
+      const secX = (920 - gW_px) / 2;
+      const secY = 385;
+
+      const flrH = 0.20 * 68;
+      const blkH = 0.40 * 68;
+      const eavH = 3.00 * 68;
+      const lowRidgeH = 3.70 * 68;
+      const highRidgeH = 4.00 * 68;
+      const overlap_px = 0.40 * sc;
+
+      const midX = secX + gW_px / 2;
+      const eaveY = secY - flrH - eavH;
+      const lowRidgeY = secY - flrH - lowRidgeH;
+      const highRidgeY = secY - flrH - highRidgeH;
+
+      const leftSlope = (lowRidgeH - eavH) / (gW_px / 2);
+      const leftEaveY = eaveY + oH_px * leftSlope;
+
+      const rightSlope = (highRidgeH - eavH) / (gW_px / 2);
+      const rightEaveY = eaveY + oH_px * rightSlope;
+      const overlapTipX = midX - overlap_px;
+      const overlapTipY = highRidgeY - overlap_px * rightSlope;
+
+      // Puerta Frontal en el fondo (1.00 m ancho x 2.10 m alto)
+      const doorW_px = 1.00 * sc;
+      const doorH_px = 2.10 * 68;
+      const doorLeftX = midX - doorW_px / 2;
+      const doorTopY = secY - flrH - doorH_px;
+
+      return `
+        <svg viewBox="0 0 920 440" class="w-full max-w-4xl h-auto" style="min-width: 680px;" xmlns="http://www.w3.org/2000/svg">
+          <!-- Terreno Natural NTN ±0.00 -->
+          <line x1="30" y1="${secY}" x2="890" y2="${secY}" stroke="#64748b" stroke-width="1.8"/>
+          <text x="40" y="${secY + 18}" fill="#64748b" font-size="11" font-weight="bold">NTN ±0.00</text>
+
+          <!-- Relleno y Piso de Concreto Elevado (+0.20m) -->
+          <rect x="${secX}" y="${secY - flrH}" width="${gW_px}" height="${flrH}" fill="#f1f5f9" stroke="#334155" stroke-width="1.2"/>
+          <polygon points="${secX - 35},${secY} ${secX},${secY - flrH} ${secX},${secY}" fill="#e2e8f0" stroke="#334155" stroke-width="0.8"/>
+          <polygon points="${secX + gW_px},${secY - flrH} ${secX + gW_px + 35},${secY} ${secX + gW_px},${secY}" fill="#e2e8f0" stroke="#334155" stroke-width="0.8"/>
+          <text x="40" y="${secY - flrH - 5}" fill="#0284c7" font-size="11" font-weight="bold">NPT +0.20</text>
+
+          <!-- Muro Trasero / Culata con Puerta en Fondo (1.00 x 2.10 m) -->
+          <rect x="${doorLeftX}" y="${doorTopY}" width="${doorW_px}" height="${doorH_px}" fill="#f8fafc" stroke="#6366f1" stroke-width="1.4" stroke-dasharray="4 2"/>
+          <line x1="${doorLeftX + doorW_px - 8}" y1="${doorTopY + doorH_px/2}" x2="${doorLeftX + doorW_px - 8}" y2="${doorTopY + doorH_px/2 + 8}" stroke="#6366f1" stroke-width="2"/>
+          <rect x="${midX - 38}" y="${doorTopY + 12}" width="76" height="15" fill="#ffffff" rx="3" stroke="#818cf8" stroke-width="0.7"/>
+          <text x="${midX}" y="${doorTopY + 23}" fill="#4f46e5" font-size="9" font-weight="bold" text-anchor="middle">PUERTA 1.00 x 2.10</text>
+
+          <!-- Paredes laterales de bloques (0.40m) -->
+          <rect x="${secX}" y="${secY - flrH - blkH}" width="12" height="${blkH}" fill="#94a3b8" stroke="#1e293b" stroke-width="1.2"/>
+          <rect x="${secX + gW_px - 12}" y="${secY - flrH - blkH}" width="12" height="${blkH}" fill="#94a3b8" stroke="#1e293b" stroke-width="1.2"/>
+
+          <!-- Columnas laterales de soporte (3.00m) -->
+          <line x1="${secX + 6}" y1="${secY - flrH - blkH}" x2="${secX + 6}" y2="${eaveY}" stroke="#0f172a" stroke-width="2.2"/>
+          <line x1="${secX + gW_px - 6}" y1="${secY - flrH - blkH}" x2="${secX + gW_px - 6}" y2="${eaveY}" stroke="#0f172a" stroke-width="2.2"/>
+
+          <!-- Mallas antipájaros laterales -->
+          <line x1="${secX + 6}" y1="${secY - flrH - blkH}" x2="${secX + 6}" y2="${eaveY}" stroke="#38bdf8" stroke-width="1" stroke-dasharray="3 2"/>
+          <line x1="${secX + gW_px - 6}" y1="${secY - flrH - blkH}" x2="${secX + gW_px - 6}" y2="${eaveY}" stroke="#38bdf8" stroke-width="1" stroke-dasharray="3 2"/>
+
+          <!-- Tensor horizontal inferior (3.00m) -->
+          <line x1="${secX}" y1="${eaveY}" x2="${secX + gW_px}" y2="${eaveY}" stroke="#334155" stroke-width="1.5"/>
+
+          <!-- Pilar central vertical (desde tensor hasta vertiente baja a 3.70m) -->
+          <line x1="${midX}" y1="${eaveY}" x2="${midX}" y2="${lowRidgeY}" stroke="#0f172a" stroke-width="2.5"/>
+
+          <!-- ABERTURA VERTICAL DE VENTILACIÓN (0.30m) ENTRE 3.70m y 4.00m -->
+          <line x1="${midX}" y1="${lowRidgeY}" x2="${midX}" y2="${highRidgeY}" stroke="#10b981" stroke-width="2.2" stroke-dasharray="4 2"/>
+
+          <!-- TECHO ROJO (Vertiente baja: 3.70m) - TERMINA EXACTAMENTE EN MIDX -->
+          <line x1="${secX - oH_px}" y1="${leftEaveY + 3}" x2="${midX}" y2="${lowRidgeY + 3}" stroke="#475569" stroke-width="1.8"/>
+          <line x1="${secX - oH_px}" y1="${leftEaveY}" x2="${midX}" y2="${lowRidgeY}" stroke="#dc2626" stroke-width="2.6" stroke-linecap="round"/>
+          <circle cx="${midX}" cy="${lowRidgeY}" r="3.5" fill="#dc2626"/>
+
+          <!-- TECHO AZUL (Vertiente alta: 4.00m) - TRASLAPA 0.40m HACIA LA IZQUIERDA -->
+          <line x1="${secX + gW_px + oH_px}" y1="${rightEaveY + 3}" x2="${overlapTipX}" y2="${overlapTipY + 3}" stroke="#475569" stroke-width="1.8"/>
+          <line x1="${secX + gW_px + oH_px}" y1="${rightEaveY}" x2="${overlapTipX}" y2="${overlapTipY}" stroke="#2563eb" stroke-width="2.8" stroke-linecap="round"/>
+          <circle cx="${secX + gW_px + oH_px}" cy="${rightEaveY}" r="3" fill="#2563eb"/>
+          <circle cx="${overlapTipX}" cy="${overlapTipY}" r="3" fill="#2563eb"/>
+          <!-- Goterón en voladizo -->
+          <line x1="${overlapTipX}" y1="${overlapTipY}" x2="${overlapTipX}" y2="${overlapTipY + 6}" stroke="#2563eb" stroke-width="2"/>
+
+          <!-- IDENTIFICADORES DE TECHO CON BADGE DE PROTECCIÓN -->
+          <rect x="${(secX + midX)/2 - 32}" y="${(eaveY + lowRidgeY)/2 - 25}" width="64" height="17" fill="#ffffff" rx="3" stroke="#fca5a5" stroke-width="0.8"/>
+          <text x="${(secX + midX)/2}" y="${(eaveY + lowRidgeY)/2 - 13}" fill="#dc2626" font-size="11" font-weight="bold" text-anchor="middle">3.70 m (Baja)</text>
+
+          <rect x="${(secX + gW_px + midX)/2 - 32}" y="${(eaveY + highRidgeY)/2 - 25}" width="64" height="17" fill="#ffffff" rx="3" stroke="#93c5fd" stroke-width="0.8"/>
+          <text x="${(secX + gW_px + midX)/2}" y="${(eaveY + highRidgeY)/2 - 13}" fill="#2563eb" font-size="11" font-weight="bold" text-anchor="middle">4.00 m (Alta)</text>
+
+          <!-- FLECHAS DE FLUJO DE AIRE CALIENTE (CONVECCIÓN) -->
+          <path d="M ${midX - 25} ${lowRidgeY + 28} L ${midX - 10} ${lowRidgeY - 4}" stroke="#f59e0b" stroke-width="1.8" stroke-dasharray="4 2"/>
+          <polygon points="${midX - 10},${lowRidgeY - 8} ${midX - 15},${lowRidgeY - 1} ${midX - 7},${lowRidgeY - 2}" fill="#f59e0b"/>
+          
+          <path d="M ${midX - 12} ${lowRidgeY + 30} L ${midX - 2} ${lowRidgeY - 2}" stroke="#f59e0b" stroke-width="1.8" stroke-dasharray="4 2"/>
+          <polygon points="${midX - 2},${lowRidgeY - 7} ${midX - 6},${lowRidgeY + 1} ${midX + 2},${lowRidgeY - 1}" fill="#f59e0b"/>
+
+          <!-- COTA TRASLAPE 0.40m (EN AZUL) -->
+          <line x1="${overlapTipX}" y1="${highRidgeY - 20}" x2="${midX}" y2="${highRidgeY - 20}" stroke="#2563eb" stroke-width="1.2"/>
+          <line x1="${overlapTipX}" y1="${highRidgeY - 25}" x2="${overlapTipX}" y2="${highRidgeY - 15}" stroke="#2563eb" stroke-width="1.4"/>
+          <line x1="${midX}" y1="${highRidgeY - 25}" x2="${midX}" y2="${highRidgeY - 15}" stroke="#2563eb" stroke-width="1.4"/>
+          <rect x="${(overlapTipX + midX)/2 - 16}" y="${highRidgeY - 28}" width="32" height="15" fill="#ffffff" rx="3" stroke="#2563eb" stroke-width="0.8"/>
+          <text x="${(overlapTipX + midX)/2}" y="${highRidgeY - 17}" fill="#2563eb" font-size="10.5" font-weight="bold" text-anchor="middle">0.40</text>
+
+          <!-- COTA ABERTURA VERTICAL 0.30m (EN VERDE) -->
+          <line x1="${midX + 18}" y1="${highRidgeY}" x2="${midX + 18}" y2="${lowRidgeY}" stroke="#10b981" stroke-width="1.2"/>
+          <line x1="${midX + 13}" y1="${highRidgeY}" x2="${midX + 23}" y2="${highRidgeY}" stroke="#10b981" stroke-width="1.4"/>
+          <line x1="${midX + 13}" y1="${lowRidgeY}" x2="${midX + 23}" y2="${lowRidgeY}" stroke="#10b981" stroke-width="1.4"/>
+          <rect x="${midX + 24}" y="${(highRidgeY + lowRidgeY)/2 - 8}" width="32" height="16" fill="#ffffff" rx="3" stroke="#10b981" stroke-width="0.8"/>
+          <text x="${midX + 40}" y="${(highRidgeY + lowRidgeY)/2 + 4}" fill="#10b981" font-size="10.5" font-weight="bold" text-anchor="middle">0.30</text>
+
+          <!-- PENDIENTE DEL PISO -->
+          <text x="${secX + 40}" y="${secY - flrH - 6}" fill="#0f172a" font-size="10.5" font-weight="bold">i = 1.0%</text>
+
+          <!-- COTAS HORIZONTALES SUPERIORES (ESCALONADAS PARA NO CHOCAR) -->
+          ${drawDimH(secX - oH_px, secX, 52, '1.20')}
+          ${drawDimH(secX, secX + gW_px, 52, W.toFixed(2))}
+          ${drawDimH(secX + gW_px, secX + gW_px + oH_px, 52, '1.20')}
+          ${drawDimH(secX - oH_px, secX + gW_px + oH_px, 24, totalRoofW.toFixed(2))}
+
+          <!-- COTAS VERTICALES DERECHAS (EN COLUMNAS SEPARADAS PARA NO TAPARSE) -->
+          <!-- Columna 1: Piso (+0.20) y Muro (0.40) -->
+          ${drawDimV(secY, secY - flrH, secX + gW_px + oH_px + 18, '0.20', '#334155', '#ffffff', true)}
+          ${drawDimV(secY - flrH, secY - flrH - blkH, secX + gW_px + oH_px + 18, '0.40', '#334155', '#ffffff', true)}
+
+          <!-- Columna 2: Altura Pared Lateral (3.00m) -->
+          ${drawDimV(secY - flrH, eaveY, secX + gW_px + oH_px + 52, '3.00')}
+
+          <!-- Columna 3: Altura Cumbrera Baja (3.70m) -->
+          ${drawDimV(secY - flrH, lowRidgeY, secX + gW_px + oH_px + 78, '3.70', '#dc2626')}
+
+          <!-- Columna 4: Altura Cumbrera Alta (4.00m) -->
+          ${drawDimV(secY - flrH, highRidgeY, secX + gW_px + oH_px + 104, '4.00', '#2563eb')}
+        </svg>
+      `;
+    }
+
+    // ==========================================
+    // 2. PLANTA ARQUITECTÓNICA
+    // ==========================================
+    function getPlantaSVG() {
+      const W = currentWidth;
+      const L = currentLength;
+      const totalRoofW = W + 2.40;
+      const totalRoofL = L + 1.20;
+
+      const sc = Math.min(520 / totalRoofL, 250 / totalRoofW);
+      const gL_px = L * sc;
+      const gW_px = W * sc;
+      const eLat_px = 1.20 * sc;
+      const eGable_px = 0.60 * sc;
+
+      const ox = (920 - gL_px) / 2;
+      const oy = (400 - gW_px) / 2 + 15;
+
+      const numBays = Math.max(2, Math.round(L / 3.0));
+      const baySpacing = L / numBays;
+      const baySpacing_px = gL_px / numBays;
+
+      let baysSvg = '';
+      let colsSvg = '';
+      for (let i = 0; i <= numBays; i++) {
+        const cx = ox + i * baySpacing_px;
+        colsSvg += `
+          <rect x="${cx - 3.5}" y="${oy - 3.5}" width="7" height="7" fill="#0f172a" rx="1"/>
+          <rect x="${cx - 3.5}" y="${oy + gW_px - 3.5}" width="7" height="7" fill="#0f172a" rx="1"/>
+        `;
+        if (i < numBays) {
+          const nextX = ox + (i + 1) * baySpacing_px;
+          baysSvg += drawDimH(cx, nextX, oy + gW_px + eLat_px + 20, baySpacing.toFixed(2));
+        }
+      }
+
+      // Puerta Frontal en Culata Izquierda (Eje 1 / Fachada Frontal)
+      const doorW_px = 1.00 * sc;
+      const doorY1 = oy + (gW_px - doorW_px) / 2;
+      const doorY2 = doorY1 + doorW_px;
+
+      const ridgeY = oy + gW_px / 2;
+      const overlapY = ridgeY - (0.40 * sc);
+
+      return `
+        <svg viewBox="0 0 920 440" class="w-full max-w-4xl h-auto" style="min-width: 680px;" xmlns="http://www.w3.org/2000/svg">
+          <!-- Proyección del Techo (Línea discontinua roja) -->
+          <rect x="${ox - eGable_px}" y="${oy - eLat_px}" width="${gL_px + 2*eGable_px}" height="${gW_px + 2*eLat_px}" 
+                fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="5 3" rx="2"/>
+
+          <!-- Piso del Galpón (+0.20m) -->
+          <rect x="${ox}" y="${oy}" width="${gL_px}" height="${gW_px}" fill="#f8fafc" stroke="#1e293b" stroke-width="1.5"/>
+
+          <!-- Muro perimetral de bloque (0.40m de alto, 15cm ancho gráfico) -->
+          <!-- Pared Norte y Sur -->
+          <rect x="${ox}" y="${oy}" width="${gL_px}" height="6" fill="#94a3b8"/>
+          <rect x="${ox}" y="${oy + gW_px - 6}" width="${gL_px}" height="6" fill="#94a3b8"/>
+          <!-- Culata Posterior (Derecha) -->
+          <rect x="${ox + gL_px - 6}" y="${oy}" width="6" height="${gW_px}" fill="#94a3b8"/>
+          <!-- Culata Frontal (Izquierda) con vano para PUERTA ESTÁNDAR 1.00m -->
+          <rect x="${ox}" y="${oy}" width="6" height="${doorY1 - oy}" fill="#94a3b8"/>
+          <rect x="${ox}" y="${doorY2}" width="6" height="${oy + gW_px - doorY2}" fill="#94a3b8"/>
+
+          <!-- DETALLE DE PUERTA ESTÁNDAR P-1 (1.00 x 2.10 m) -->
+          <!-- Jambas / Marcos -->
+          <rect x="${ox - 2}" y="${doorY1 - 2}" width="6" height="4" fill="#0f172a"/>
+          <rect x="${ox - 2}" y="${doorY2 - 2}" width="6" height="4" fill="#0f172a"/>
+          <!-- Hoja de puerta abierta a 90° hacia el exterior -->
+          <line x1="${ox}" y1="${doorY1}" x2="${ox - doorW_px}" y2="${doorY1}" stroke="#4f46e5" stroke-width="2.4"/>
+          <!-- Arco de abatimiento -->
+          <path d="M ${ox - doorW_px} ${doorY1} A ${doorW_px} ${doorW_px} 0 0 1 ${ox} ${doorY2}" fill="none" stroke="#6366f1" stroke-width="1.2" stroke-dasharray="3 2"/>
+          
+          <!-- Cota y etiqueta de puerta -->
+          <line x1="${ox - 10}" y1="${doorY1}" x2="${ox - 10}" y2="${doorY2}" stroke="#4f46e5" stroke-width="1.2"/>
+          <line x1="${ox - 14}" y1="${doorY1}" x2="${ox - 6}" y2="${doorY1}" stroke="#4f46e5" stroke-width="1.2"/>
+          <line x1="${ox - 14}" y1="${doorY2}" x2="${ox - 6}" y2="${doorY2}" stroke="#4f46e5" stroke-width="1.2"/>
+          <rect x="${ox - 84}" y="${(doorY1 + doorY2)/2 - 16}" width="68" height="32" fill="#ffffff" rx="4" stroke="#818cf8" stroke-width="1"/>
+          <text x="${ox - 50}" y="${(doorY1 + doorY2)/2 - 3}" fill="#3730a3" font-size="9.5" font-weight="bold" text-anchor="middle">PUERTA P-1</text>
+          <text x="${ox - 50}" y="${(doorY1 + doorY2)/2 + 10}" fill="#4f46e5" font-size="9" font-weight="bold" text-anchor="middle">1.00 x 2.10 m</text>
+
+          <!-- Cumbreras en planta -->
+          <line x1="${ox - eGable_px}" y1="${ridgeY}" x2="${ox + gL_px + eGable_px}" y2="${ridgeY}" stroke="#64748b" stroke-width="1.2" stroke-dasharray="4 2"/>
+          <line x1="${ox - eGable_px}" y1="${overlapY}" x2="${ox + gL_px + eGable_px}" y2="${overlapY}" stroke="#2563eb" stroke-width="1.6"/>
+          <rect x="${ox - eGable_px}" y="${overlapY}" width="${gL_px + 2*eGable_px}" height="${ridgeY - overlapY}" fill="#bfdbfe" opacity="0.35"/>
+          <text x="${ox + gL_px/2}" y="${overlapY - 4}" fill="#2563eb" font-size="9.5" font-weight="bold" text-anchor="middle">Traslape Cumbrera 0.40 m</text>
+
+          <!-- Columnas y Cotas entre ejes -->
+          ${colsSvg}
+          ${baysSvg}
+
+          <!-- COTAS HORIZONTALES INFERIORES -->
+          ${drawDimH(ox, ox + gL_px, oy + gW_px + eLat_px + 40, L.toFixed(2))}
+          ${drawDimH(ox - eGable_px, ox + gL_px + eGable_px, oy + gW_px + eLat_px + 60, totalRoofL.toFixed(2))}
+
+          <!-- COTAS VERTICALES DERECHAS (NO SOLAPAN CON LA PUERTA DE LA IZQUIERDA) -->
+          ${drawDimV(oy, oy + gW_px, ox + gL_px + eGable_px + 20, W.toFixed(2))}
+          ${drawDimV(oy - eLat_px, oy + gW_px + eLat_px, ox + gL_px + eGable_px + 48, totalRoofW.toFixed(2))}
+          ${drawDimV(oy - eLat_px, oy, ox + gL_px + eGable_px + 20, '1.20', '#334155', '#ffffff', true)}
+          ${drawDimV(oy + gW_px, oy + gW_px + eLat_px, ox + gL_px + eGable_px + 20, '1.20', '#334155', '#ffffff', true)}
+
+          <!-- COTAS HORIZONTALES SUPERIORES (ALERONES DE CULATA) -->
+          ${drawDimH(ox - eGable_px, ox, oy - eLat_px - 14, '0.60')}
+          ${drawDimH(ox + gL_px, ox + gL_px + eGable_px, oy - eLat_px - 14, '0.60')}
+
+          <!-- Pendiente de piso -->
+          <text x="${ox + 40}" y="${oy + gW_px/2 + 25}" font-size="10.5" font-weight="bold" fill="#0f172a">Pendiente Piso 1.0%</text>
+
+          <!-- Rosa de los Vientos (Orientación Este - Oeste) -->
+          <g transform="translate(835, 65)">
+            <circle cx="0" cy="0" r="18" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+            <polygon points="0,0 -3.5,0 0,-15" fill="#0f172a"/>
+            <line x1="-15" y1="0" x2="15" y2="0" stroke="#0f172a" stroke-width="1"/>
+            <text x="0" y="-19" font-size="9" font-weight="bold" fill="#0f172a" text-anchor="middle">N</text>
+            <text x="21" y="3.5" font-size="9" font-weight="bold" fill="#dc2626" text-anchor="start">E (Frontal)</text>
+            <text x="-21" y="3.5" font-size="9" font-weight="bold" fill="#dc2626" text-anchor="end">O</text>
+          </g>
+        </svg>
+      `;
+    }
+
+    // ==========================================
+    // 3. FACHADA FRONTAL / CULATA CON PUERTA
+    // ==========================================
+    function getFrontalSVG() {
+      const W = currentWidth;
+      const totalRoofW = W + 2.40;
+
+      const sc = Math.min(68, 560 / totalRoofW);
+      const gW_px = W * sc;
+      const oH_px = 1.20 * sc;
+      const secX = (920 - gW_px) / 2;
+      const secY = 385;
+
+      const flrH = 0.20 * 68;
+      const blkH = 0.40 * 68;
+      const eavH = 3.00 * 68;
+      const lowRidgeH = 3.70 * 68;
+      const highRidgeH = 4.00 * 68;
+      const overlap_px = 0.40 * sc;
+
+      const midX = secX + gW_px / 2;
+      const eaveY = secY - flrH - eavH;
+      const lowRidgeY = secY - flrH - lowRidgeH;
+      const highRidgeY = secY - flrH - highRidgeH;
+
+      const leftSlope = (lowRidgeH - eavH) / (gW_px / 2);
+      const leftEaveY = eaveY + oH_px * leftSlope;
+
+      const rightSlope = (highRidgeH - eavH) / (gW_px / 2);
+      const rightEaveY = eaveY + oH_px * rightSlope;
+      const overlapTipX = midX - overlap_px;
+      const overlapTipY = highRidgeY - overlap_px * rightSlope;
+
+      // PUERTA FRONTAL ESTÁNDAR (1.00 x 2.10 m)
+      const doorW_px = 1.00 * sc;
+      const doorH_px = 2.10 * 68;
+      const doorLeftX = midX - doorW_px / 2;
+      const doorTopY = secY - flrH - doorH_px;
+
+      return `
+        <svg viewBox="0 0 920 440" class="w-full max-w-4xl h-auto" style="min-width: 680px;" xmlns="http://www.w3.org/2000/svg">
+          <!-- Terreno Natural NTN ±0.00 -->
+          <line x1="30" y1="${secY}" x2="890" y2="${secY}" stroke="#64748b" stroke-width="1.8"/>
+          <text x="40" y="${secY + 18}" fill="#64748b" font-size="11" font-weight="bold">NTN ±0.00</text>
+
+          <!-- Escalón / Rampa y Piso +0.20m -->
+          <rect x="${secX}" y="${secY - flrH}" width="${gW_px}" height="${flrH}" fill="#f1f5f9" stroke="#334155" stroke-width="1.2"/>
+          <polygon points="${secX - 35},${secY} ${secX},${secY - flrH} ${secX},${secY}" fill="#e2e8f0" stroke="#334155" stroke-width="0.8"/>
+          <polygon points="${secX + gW_px},${secY - flrH} ${secX + gW_px + 35},${secY} ${secX + gW_px},${secY}" fill="#e2e8f0" stroke="#334155" stroke-width="0.8"/>
+          <text x="40" y="${secY - flrH - 5}" fill="#0284c7" font-size="11" font-weight="bold">NPT +0.20</text>
+
+          <!-- Pared de Culata: Muro de bloques 0.40m a los lados de la puerta -->
+          <rect x="${secX}" y="${secY - flrH - blkH}" width="${doorLeftX - secX}" height="${blkH}" fill="#94a3b8" stroke="#1e293b" stroke-width="1.2"/>
+          <rect x="${doorLeftX + doorW_px}" y="${secY - flrH - blkH}" width="${secX + gW_px - (doorLeftX + doorW_px)}" height="${blkH}" fill="#94a3b8" stroke="#1e293b" stroke-width="1.2"/>
+
+          <!-- Malla y cerramiento superior de culata -->
+          <polygon points="${secX},${secY - flrH - blkH} ${secX},${eaveY} ${midX},${lowRidgeY} ${midX},${secY - flrH - blkH}" fill="#e0f2fe" opacity="0.4"/>
+          <polygon points="${midX},${secY - flrH - blkH} ${midX},${highRidgeY} ${secX + gW_px},${eaveY} ${secX + gW_px},${secY - flrH - blkH}" fill="#e0f2fe" opacity="0.4"/>
+
+          <!-- Estructura de columnas culata -->
+          <line x1="${secX}" y1="${secY - flrH}" x2="${secX}" y2="${eaveY}" stroke="#0f172a" stroke-width="2.5"/>
+          <line x1="${secX + gW_px}" y1="${secY - flrH}" x2="${secX + gW_px}" y2="${eaveY}" stroke="#0f172a" stroke-width="2.5"/>
+          <line x1="${midX}" y1="${doorTopY}" x2="${midX}" y2="${lowRidgeY}" stroke="#0f172a" stroke-width="2.2"/>
+
+          <!-- PUERTA ESTÁNDAR P-1 (1.00 x 2.10 m) EN PRIMER PLANO -->
+          <!-- Marco exterior -->
+          <rect x="${doorLeftX}" y="${doorTopY}" width="${doorW_px}" height="${doorH_px}" fill="#ffffff" stroke="#1e293b" stroke-width="2.2"/>
+          <!-- Zócalo inferior metálico de puerta (0.90m) -->
+          <rect x="${doorLeftX + 3}" y="${secY - flrH - (0.90 * 68)}" width="${doorW_px - 6}" height="${0.90 * 68 - 2}" fill="#cbd5e1" stroke="#475569" stroke-width="1.2"/>
+          <!-- Malla metálica superior de puerta -->
+          <rect x="${doorLeftX + 3}" y="${doorTopY + 3}" width="${doorW_px - 6}" height="${doorH_px - (0.90 * 68) - 4}" fill="#f8fafc" stroke="#38bdf8" stroke-width="1" stroke-dasharray="3 2"/>
+          <!-- Manija / Cerradura -->
+          <circle cx="${doorLeftX + doorW_px - 8}" cy="${secY - flrH - (1.00 * 68)}" r="3" fill="#0f172a"/>
+          <line x1="${doorLeftX + doorW_px - 8}" y1="${secY - flrH - (1.00 * 68)}" x2="${doorLeftX + doorW_px - 14}" y2="${secY - flrH - (1.00 * 68)}" stroke="#0f172a" stroke-width="2"/>
+
+          <!-- COTAS ESPECÍFICAS DE LA PUERTA (1.00m x 2.10m) -->
+          ${drawDimH(doorLeftX, doorLeftX + doorW_px, secY - flrH + 22, '1.00')}
+          ${drawDimV(secY - flrH, doorTopY, doorLeftX - 16, '2.10', '#4f46e5', '#ffffff')}
+          
+          <rect x="${midX - 55}" y="${doorTopY - 26}" width="110" height="20" fill="#ffffff" rx="4" stroke="#6366f1" stroke-width="1.2"/>
+          <text x="${midX}" y="${doorTopY - 12}" fill="#3730a3" font-size="10.5" font-weight="bold" text-anchor="middle">PUERTA P-1 (1.00 x 2.10 m)</text>
+
+          <!-- ABERTURA CENITAL DE CUMBRERA (0.30m) -->
+          <rect x="${midX - 2}" y="${highRidgeY}" width="4" height="${lowRidgeY - highRidgeY}" fill="#10b981"/>
+          <line x1="${midX}" y1="${lowRidgeY}" x2="${midX}" y2="${highRidgeY}" stroke="#10b981" stroke-width="2" stroke-dasharray="3 2"/>
+
+          <!-- TECHO ROJO (Baja 3.70m) -->
+          <line x1="${secX - oH_px}" y1="${leftEaveY}" x2="${midX}" y2="${lowRidgeY}" stroke="#dc2626" stroke-width="3" stroke-linecap="round"/>
+
+          <!-- TECHO AZUL (Alta 4.00m con traslape 0.40m) -->
+          <line x1="${secX + gW_px + oH_px}" y1="${rightEaveY}" x2="${overlapTipX}" y2="${overlapTipY}" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
+          <line x1="${overlapTipX}" y1="${overlapTipY}" x2="${overlapTipX}" y2="${overlapTipY + 6}" stroke="#2563eb" stroke-width="2"/>
+
+          <!-- COTAS HORIZONTALES SUPERIORES -->
+          ${drawDimH(secX - oH_px, secX, 52, '1.20')}
+          ${drawDimH(secX, secX + gW_px, 52, W.toFixed(2))}
+          ${drawDimH(secX + gW_px, secX + gW_px + oH_px, 52, '1.20')}
+          ${drawDimH(secX - oH_px, secX + gW_px + oH_px, 24, totalRoofW.toFixed(2))}
+
+          <!-- COTAS VERTICALES DERECHAS -->
+          ${drawDimV(secY - flrH, eaveY, secX + gW_px + oH_px + 22, '3.00')}
+          ${drawDimV(secY - flrH, lowRidgeY, secX + gW_px + oH_px + 52, '3.70', '#dc2626')}
+          ${drawDimV(secY - flrH, highRidgeY, secX + gW_px + oH_px + 82, '4.00', '#2563eb')}
+        </svg>
+      `;
+    }
+
+    // ==========================================
+    // 4. FACHADA LATERAL LONGITUDINAL
+    // ==========================================
+    function getFachadaSVG() {
+      const L = currentLength;
+      const totalRoofL = L + 1.20;
+
+      const sc = Math.min(540 / totalRoofL, 46);
+      const gL_px = L * sc;
+      const eGable_px = 0.60 * sc;
+      const longX = (920 - gL_px) / 2;
+      const longY = 360;
+
+      const flrH = 0.20 * 64;
+      const blkH = 0.40 * 64;
+      const eavH = 3.00 * 64;
+      const lowRdH = 3.70 * 64;
+      const highRdH = 4.00 * 64;
+      const ventH = 0.30 * 64;
+
+      const numBays = Math.max(2, Math.round(L / 3.0));
+      const baySpacing = L / numBays;
+      const baySpacing_px = gL_px / numBays;
+
+      let colsSvg = '';
+      let meshSvg = '';
+      let baysSvg = '';
+
+      for (let i = 0; i <= numBays; i++) {
+        const cx = longX + i * baySpacing_px;
+        colsSvg += `<rect x="${cx - 3.5}" y="${longY - flrH - eavH}" width="7" height="${eavH - blkH}" fill="#0f172a"/>`;
+        if (i < numBays) {
+          const nextX = longX + (i + 1) * baySpacing_px;
+          meshSvg += `<rect x="${cx + 3.5}" y="${longY - flrH - eavH}" width="${baySpacing_px - 7}" height="${eavH - blkH}" fill="#f0f9ff" stroke="#38bdf8" stroke-width="0.8" stroke-dasharray="3 3"/>`;
+          baysSvg += drawDimH(cx, nextX, 48, baySpacing.toFixed(2));
+        }
+      }
+
+      return `
+        <svg viewBox="0 0 920 440" class="w-full max-w-4xl h-auto" style="min-width: 680px;" xmlns="http://www.w3.org/2000/svg">
+          <!-- Terreno Natural NTN -->
+          <line x1="30" y1="${longY}" x2="890" y2="${longY}" stroke="#64748b" stroke-width="1.8"/>
+          <text x="40" y="${longY + 18}" fill="#64748b" font-size="11" font-weight="bold">NTN ±0.00</text>
+
+          <!-- Piso Elevado +0.20m -->
+          <rect x="${longX}" y="${longY - flrH}" width="${gL_px}" height="${flrH}" fill="#e2e8f0" stroke="#334155" stroke-width="1.2"/>
+          <text x="40" y="${longY - flrH - 5}" fill="#0284c7" font-size="11" font-weight="bold">NPT +0.20</text>
+
+          <!-- Muro perimetral de bloque 0.40m -->
+          <rect x="${longX}" y="${longY - flrH - blkH}" width="${gL_px}" height="${blkH}" fill="#94a3b8" stroke="#1e293b" stroke-width="1.2"/>
+
+          <!-- Mallas antipájaros y columnas -->
+          ${meshSvg}
+          ${colsSvg}
+
+          <!-- Alero lateral inferior (3.00m) -->
+          <line x1="${longX - eGable_px}" y1="${longY - flrH - eavH}" x2="${longX + gL_px + eGable_px}" y2="${longY - flrH - eavH}" stroke="#dc2626" stroke-width="2.6"/>
+
+          <!-- Banda de Abertura Cenital Continua (0.30m) -->
+          <line x1="${longX - eGable_px}" y1="${longY - flrH - lowRdH}" x2="${longX + gL_px + eGable_px}" y2="${longY - flrH - lowRdH}" stroke="#64748b" stroke-width="1.2" stroke-dasharray="4 2"/>
+          <rect x="${longX - eGable_px}" y="${longY - flrH - highRdH}" width="${gL_px + 2*eGable_px}" height="${ventH}" fill="#ecfdf5" stroke="#10b981" stroke-width="1.2" stroke-dasharray="3 2"/>
+          <text x="${longX + gL_px/2}" y="${longY - flrH - highRdH + ventH/2 + 4}" fill="#047857" font-size="10" font-weight="bold" text-anchor="middle">Abertura de Ventilación Continua (0.30 m)</text>
+
+          <!-- Cumbrera Alta (4.00m) -->
+          <line x1="${longX - eGable_px}" y1="${longY - flrH - highRdH}" x2="${longX + gL_px + eGable_px}" y2="${longY - flrH - highRdH}" stroke="#2563eb" stroke-width="2.6"/>
+
+          <!-- COTAS HORIZONTALES (ESCALONADAS PARA NO SALIRSE NI CHOCAR) -->
+          ${baysSvg}
+          ${drawDimH(longX, longX + gL_px, 24, L.toFixed(2))}
+          ${drawDimH(longX - eGable_px, longX + gL_px + eGable_px, 6, totalRoofL.toFixed(2))}
+          ${drawDimH(longX - eGable_px, longX, 48, '0.60')}
+          ${drawDimH(longX + gL_px, longX + gL_px + eGable_px, 48, '0.60')}
+
+          <!-- COTAS VERTICALES DERECHAS -->
+          ${drawDimV(longY, longY - flrH, longX + gL_px + eGable_px + 20, '0.20', '#334155', '#ffffff', true)}
+          ${drawDimV(longY - flrH, longY - flrH - blkH, longX + gL_px + eGable_px + 20, '0.40', '#334155', '#ffffff', true)}
+          ${drawDimV(longY - flrH, longY - flrH - eavH, longX + gL_px + eGable_px + 52, '3.00')}
+          ${drawDimV(longY - flrH, longY - flrH - highRdH, longX + gL_px + eGable_px + 82, '4.00', '#2563eb')}
+        </svg>
+      `;
+    }
+
+    // ==========================================
+    // 5. DETALLE CUMBRERA ASIMÉTRICA
+    // ==========================================
+    function getDetalleSVG() {
+      return `
+        <svg viewBox="0 0 920 440" class="w-full max-w-4xl h-auto" style="min-width: 680px;" xmlns="http://www.w3.org/2000/svg">
+          <!-- Pilar central vertical (Negro) -->
+          <line x1="460" y1="350" x2="460" y2="250" stroke="#0f172a" stroke-width="5"/>
+          <text x="475" y="330" fill="#64748b" font-size="12" font-weight="bold">Columna Central</text>
+
+          <!-- Abertura vertical con malla antipájaros (0.30m en verde) -->
+          <line x1="460" y1="250" x2="460" y2="135" stroke="#10b981" stroke-width="4" stroke-dasharray="6 4"/>
+          <line x1="458" y1="250" x2="458" y2="135" stroke="#0f172a" stroke-width="1.5"/>
+          <text x="475" y="195" fill="#10b981" font-size="11.5" font-weight="bold">Malla Antipájaros</text>
+
+          <!-- TECHO ROJO (Vertiente baja 3.70m) - LLEGA Y SE FIJA EXACTAMENTE EN X=460 -->
+          <line x1="120" y1="315" x2="460" y2="255" stroke="#475569" stroke-width="4"/>
+          <line x1="120" y1="250" x2="460" y2="250" stroke="#dc2626" stroke-width="5.5" stroke-linecap="round"/>
+          <circle cx="460" cy="250" r="5" fill="#dc2626"/>
+
+          <!-- TECHO AZUL (Vertiente alta 4.00m) - CONTINÚA Y TRASLAPA 0.40m HACIA LA IZQUIERDA (X=310) -->
+          <line x1="800" y1="205" x2="310" y2="95" stroke="#475569" stroke-width="4"/>
+          <line x1="800" y1="200" x2="310" y2="90" stroke="#2563eb" stroke-width="6.5" stroke-linecap="round"/>
+          <circle cx="800" cy="200" r="5" fill="#2563eb"/>
+          <circle cx="310" cy="90" r="5" fill="#2563eb"/>
+          <!-- Goterón en la punta -->
+          <line x1="310" y1="90" x2="310" y2="108" stroke="#2563eb" stroke-width="3.5"/>
+
+          <!-- ETIQUETAS DE ALTURA IDENTIFICATIVAS -->
+          <rect x="220" y="222" width="90" height="24" fill="#ffffff" rx="4" stroke="#fca5a5" stroke-width="1"/>
+          <text x="265" y="238" font-size="13" font-weight="bold" fill="#dc2626" text-anchor="middle">3.70 m</text>
+
+          <rect x="630" y="132" width="90" height="24" fill="#ffffff" rx="4" stroke="#93c5fd" stroke-width="1"/>
+          <text x="675" y="148" font-size="13" font-weight="bold" fill="#2563eb" text-anchor="middle">4.00 m</text>
+
+          <!-- COTA DE TRASLAPE 0.40m (EN AZUL) -->
+          <line x1="310" y1="62" x2="460" y2="62" stroke="#2563eb" stroke-width="1.8"/>
+          <line x1="310" y1="52" x2="310" y2="72" stroke="#2563eb" stroke-width="2"/>
+          <line x1="460" y1="52" x2="460" y2="72" stroke="#2563eb" stroke-width="2"/>
+          <rect x="360" y="49" width="50" height="26" fill="#ffffff" rx="4" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="385" y="67" font-size="13.5" font-weight="bold" fill="#2563eb" text-anchor="middle">0.40</text>
+
+          <!-- COTA DE ABERTURA VERTICAL 0.30m (EN VERDE) -->
+          <line x1="590" y1="135" x2="590" y2="250" stroke="#10b981" stroke-width="1.8"/>
+          <line x1="580" y1="135" x2="600" y2="135" stroke="#10b981" stroke-width="2"/>
+          <line x1="580" y1="250" x2="600" y2="250" stroke="#10b981" stroke-width="2"/>
+          <rect x="605" y="180" width="50" height="26" fill="#ffffff" rx="4" stroke="#10b981" stroke-width="1.5"/>
+          <text x="630" y="198" font-size="13.5" font-weight="bold" fill="#10b981" text-anchor="middle">0.30</text>
+
+          <!-- FLECHAS DE FLUJO DE AIRE CALIENTE (CONVECCIÓN CENITAL) -->
+          <path d="M 405 285 L 435 175" stroke="#f59e0b" stroke-width="2.8" stroke-dasharray="6 3"/>
+          <polygon points="435,165 428,178 441,175" fill="#f59e0b"/>
+          
+          <path d="M 435 300 L 455 190" stroke="#f59e0b" stroke-width="2.8" stroke-dasharray="6 3"/>
+          <polygon points="455,180 448,193 461,190" fill="#f59e0b"/>
+        </svg>
+      `;
+    }
+
+    // ==========================================
+    // EXPORTACIÓN A PDF (DIRECTO CON jsPDF & CANVAS)
+    // ==========================================
+    function svgToCanvas(svgString, width = 2400, height = 1200) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const URL = window.URL || window.webkitURL || window;
+        const blobURL = URL.createObjectURL(svgBlob);
+
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          
+          // Fondo blanco arquitectónico
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, width, height);
+
+          // Dibujar SVG centrado
+          ctx.drawImage(img, 0, 0, width, height);
+          URL.revokeObjectURL(blobURL);
+          resolve(canvas);
+        };
+
+        img.onerror = (e) => {
+          URL.revokeObjectURL(blobURL);
+          reject(e);
+        };
+
+        img.src = blobURL;
+      });
+    }
+
+    async function downloadActiveSheetPDF() {
+      const btn = document.getElementById('btn-download-pdf');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<span class="animate-spin">⏳</span><span>Generando PDF...</span>`;
+      btn.disabled = true;
+
+      try {
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+          // Si jsPDF no estuviera disponible, recurre a impresión nativa
+          window.print();
+          showToast('Abriendo diálogo de impresión / Guardar PDF', true);
+          return;
+        }
+
+        const container = document.getElementById('svg-container');
+        const svgElem = container.querySelector('svg');
+        if (!svgElem) throw new Error('No se encontró el plano activo');
+
+        const canvas = await svgToCanvas(svgElem.outerHTML, 2400, 1150);
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'mm',
+          format: 'a4'
+        });
+
+        // 297mm x 210mm (A4 Horizontal)
+        // Membrete Superior
+        pdf.setFillColor(15, 23, 42); // slate-900
+        pdf.rect(10, 8, 277, 14, 'F');
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(11);
+        pdf.setTextColor(255, 255, 255);
+        pdf.text('PLANO ARQUITECTÓNICO - GALPÓN AVÍCOLA CLIMA CÁLIDO', 14, 15);
+        pdf.setFontSize(8.5);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Medidas: ${currentWidth.toFixed(2)} x ${currentLength.toFixed(2)} m (${(currentWidth * currentLength).toFixed(1)} m²) | Capacidad: ${Math.floor(currentWidth * currentLength * currentDensity)} gallinas`, 14, 19.5);
+        
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`LÁMINA: ${currentTab.toUpperCase()}`, 282, 17, { align: 'right' });
+
+        // Plano Gráfico Central
+        pdf.addImage(imgData, 'JPEG', 10, 24, 277, 168);
+
+        // Pie de Página Técnico
+        pdf.setDrawColor(203, 213, 225);
+        pdf.line(10, 196, 287, 196);
+        pdf.setFontSize(7.5);
+        pdf.setTextColor(71, 85, 105);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text('Especificaciones: Techo asimétrico desfasado | Ventilación 0.30 m | Traslape 0.40 m | Puerta P-1 1.00 x 2.10 m | Muro 0.40 m | Piso +0.20 m (1.0%)', 14, 202);
+        pdf.text('Cotas en metros (m) - Escala indicativa', 282, 202, { align: 'right' });
+
+        const fileName = `Plano_Galpon_${currentTab}_${currentWidth}x${currentLength}m.pdf`;
+        pdf.save(fileName);
+        showToast(`¡PDF descargado: ${fileName}!`, true);
+      } catch (err) {
+        console.error('Error generando PDF:', err);
+        // Fallback a impresión
+        window.print();
+        showToast('Abriendo ventana de impresión como PDF', true);
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    async function downloadAllSheetsPDF() {
+      const btn = document.getElementById('btn-download-all');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<span class="animate-spin">⏳</span><span>Compilando 5 Láminas...</span>`;
+      btn.disabled = true;
+
+      try {
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+          window.print();
+          return;
+        }
+
+        const sheets = [
+          { id: 'corte', title: 'CORTE TRANSVERSAL ASIMÉTRICO', getSvg: getCorteSVG },
+          { id: 'planta', title: 'PLANTA ARQUITECTÓNICA CON PUERTA FRONTAL', getSvg: getPlantaSVG },
+          { id: 'frontal', title: 'FACHADA FRONTAL CON PUERTA ESTÁNDAR 1.00 x 2.10 m', getSvg: getFrontalSVG },
+          { id: 'fachada', title: 'FACHADA LATERAL LONGITUDINAL', getSvg: getFachadaSVG },
+          { id: 'detalle', title: 'DETALLE CUMBRERA DESFASADA 0.30m / 0.40m', getSvg: getDetalleSVG }
+        ];
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'mm',
+          format: 'a4'
+        });
+
+        for (let i = 0; i < sheets.length; i++) {
+          const sheet = sheets[i];
+          if (i > 0) pdf.addPage('a4', 'landscape');
+
+          const canvas = await svgToCanvas(sheet.getSvg(), 2400, 1150);
+          const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+          // Membrete Superior
+          pdf.setFillColor(15, 23, 42);
+          pdf.rect(10, 8, 277, 14, 'F');
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(11);
+          pdf.setTextColor(255, 255, 255);
+          pdf.text(`PLANO ARQUITECTÓNICO - ${sheet.title}`, 14, 15);
+          pdf.setFontSize(8.5);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text(`Galpón Avícola: ${currentWidth.toFixed(2)} x ${currentLength.toFixed(2)} m (${(currentWidth * currentLength).toFixed(1)} m²) | Capacidad: ${Math.floor(currentWidth * currentLength * currentDensity)} aves`, 14, 19.5);
+          
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`LÁMINA ${i + 1} DE 5`, 282, 17, { align: 'right' });
+
+          // Gráfico
+          pdf.addImage(imgData, 'JPEG', 10, 24, 277, 168);
+
+          // Pie de Página
+          pdf.setDrawColor(203, 213, 225);
+          pdf.line(10, 196, 287, 196);
+          pdf.setFontSize(7.5);
+          pdf.setTextColor(71, 85, 105);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text('Diseño bioclimático para clima cálido | Ventilación Cenital Asimétrica | Puerta Estándar 1.00 x 2.10 m', 14, 202);
+          pdf.text(`Lámina ${i + 1}/5 - Cotas en metros (m)`, 282, 202, { align: 'right' });
+        }
+
+        const fileName = `Juego_Completo_Galpon_${currentWidth}x${currentLength}m.pdf`;
+        pdf.save(fileName);
+        showToast(`¡Juego completo descargado (5 láminas)!`, true);
+      } catch (err) {
+        console.error('Error generando dossier completo:', err);
+        window.print();
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    // Inicialización
+    updateDimensions();
+  </script>
+</body>
+</html>
