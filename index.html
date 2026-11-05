@@ -2147,6 +2147,7 @@
       } else {
         vp.style.height = '';
         vp.style.minHeight = '';
+        vp.style.touchAction = '';
       }
       const rect = vp.getBoundingClientRect();
       const layoutW = (svg.clientWidth || (svg.getBoundingClientRect().width / VIEW.z)) || rect.width;
@@ -2156,12 +2157,18 @@
       const narrow = rect.width < 700;
       let z;
       if (VIEW.rot === 90) {
-        // Vertical: plano girado 90°, cubriendo el ancho y el alto de la pantalla
-        // (si el plano es más alto que la pantalla se recorre arrastrando)
-        z = Math.min(VIEW.max, Math.max(rect.height / layoutW, rect.width / layoutH));
+        // Vertical: el plano girado llena el ANCHO de la pantalla y su altura completa
+        // queda dentro de la página; el scroll llega hasta el final del plano
+        z = Math.min(VIEW.max, rect.width / layoutH);
         VIEW.z = clamp(z, VIEW.min, VIEW.max);
+        const sheetH = layoutW * VIEW.z;
+        vp.style.height = Math.max(300, Math.round(sheetH)) + 'px';
+        vp.style.minHeight = '';
+        // Deslizar hacia abajo = scroll de la página (el plano ya está completo);
+        // el pellizco sigue siendo zoom del plano
+        vp.style.touchAction = 'pan-y';
         VIEW.x = rect.width / 2 + (layoutH * VIEW.z) / 2;
-        VIEW.y = rect.height / 2 - (layoutW * VIEW.z) / 2;
+        VIEW.y = 0;
       } else if (narrow) {
         // Horizontal, cubre todo el visor (se recorre arrastrando)
         z = Math.min(VIEW.max, Math.max(rect.width / layoutW, rect.height / layoutH));
