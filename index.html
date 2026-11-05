@@ -542,7 +542,7 @@
         </div>
         <button onclick="cancelCinematic()" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">Cancelar</button>
       </div>
-      <canvas id="cine-canvas" width="1280" height="720" class="block w-full bg-slate-900"></canvas>
+      <canvas id="cine-canvas" width="1600" height="900" class="block w-full bg-slate-900"></canvas>
       <div class="px-4 py-3">
         <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
           <div id="cine-progress" class="h-full w-0 rounded-full bg-sky-600"></div>
@@ -3470,11 +3470,12 @@
     // ==========================================
     // CINEMÁTICA · VIDEO DEL VISOR 3D
     // ==========================================
-    const CINE_DUR = 34;
+    const CINE_DUR = 40;
     const CINE = { active: false, raf: 0, t0: 0, recorder: null, chunks: [], mime: '', cancelled: false, prev: null, lastUI: 0 };
 
+    // MP4 (H.264) primero; WebM como respaldo en navegadores sin muxer MP4
     function pickVideoMime() {
-      const list = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'];
+      const list = ['video/mp4;codecs=avc1.42E01E', 'video/mp4;codecs=h264', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
       for (const m of list) {
         if (window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m;
       }
@@ -3484,59 +3485,64 @@
     function cineSeg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
     function cineEase(u) { return u * u * (3 - 2 * u); }
 
-    // Capa por capa → ángulos → ciclo solar
+    // Recorrido por keyframes: cámara fluida y continua (exterior → capas → interior → ciclo solar)
+    // Fundidos a negro marcan los cambios de escena interiores/exteriores
+    const CINE_CUTS = [[21.90, 22.45], [34.20, 36.00]];
+
+    function cineCutFade(t) {
+      let f = 0;
+      const w = 0.30;
+      for (const [a, b] of CINE_CUTS) {
+        if (t < a - w || t > b + w) continue;
+        if (t < a) f = Math.max(f, (t - (a - w)) / w);
+        else if (t <= b) f = Math.max(f, 1);
+        else f = Math.max(f, ((b + w) - t) / w);
+      }
+      return f;
+    }
+
     function applyCinematic(t) {
       const W = currentWidth, L = currentLength;
       const fit = fit3DDistance();
-      const on = { floor: false, litter: false, walls: false, mesh: false, structure: false, roof: false, equipment: false };
       const s = (a, b) => cineSeg(t, a, b);
       const e = cineEase;
-      CAM.center = null;
-      let yaw = 2.5, pitch = 0.5, dist = fit, sun = 9.5, cap = '', phase = 1;
 
-      if (t < 3.0) {
-        on.floor = true;
-        const u = e(s(0, 3)); yaw = 2.32 + 0.34 * u; pitch = 0.56 - 0.05 * u; dist = fit * (1.18 - 0.04 * u); sun = 9.5;
-        cap = 'Piso de concreto elevado +0.20 m'; phase = 1;
-      } else if (t < 5.2) {
-        on.floor = on.litter = true;
-        const u = e(s(3, 5.2)); yaw = 2.62 + 0.30 * u; pitch = 0.44; dist = fit * (1.02 - 0.05 * u); sun = 9.8;
-        cap = 'Cama de aserrín de 6 cm'; phase = 2;
-      } else if (t < 8.6) {
-        on.floor = on.litter = on.walls = on.mesh = true;
-        const u = e(s(5.2, 8.6)); yaw = 3.18 + 0.42 * u; pitch = 0.30 - 0.05 * u; dist = fit * 0.94; sun = 10;
-        cap = 'Muros de bloque, culatas y malla antipájaros'; phase = 3;
-      } else if (t < 12.4) {
-        on.floor = on.litter = on.walls = on.mesh = on.structure = true;
-        const u = e(s(8.6, 12.4)); yaw = 2.30 - 0.42 * u; pitch = 0.24 + 0.20 * u; dist = fit * (0.92 - 0.04 * u); sun = 10.2;
-        cap = 'Pórticos cada ' + bayLayout(L).spacing.toFixed(2) + ' m · correas y tubos de borde'; phase = 4;
-      } else if (t < 16.2) {
-        on.floor = on.litter = on.walls = on.mesh = on.structure = on.roof = true;
-        const u = e(s(12.4, 16.2)); yaw = 1.55 + 0.95 * u; pitch = 0.56 - 0.10 * u; dist = fit * (1.06 - 0.04 * u); sun = 10.5;
-        cap = 'Cubierta de zinc con traslape de ' + OVERLAP.toFixed(2) + ' m y abertura cenital'; phase = 5;
-      } else if (t < 20.4) {
-        on.floor = on.litter = on.walls = on.mesh = on.structure = on.roof = on.equipment = true;
-        const u = s(16.2, 20.4);
-        CAM.center = [W / 2, 1.35, L - 1.2];
-        yaw = Math.PI + 0.22 * (u - 0.5); pitch = 0.04; dist = Math.min(9, Math.max(4.5, L * 0.55)); sun = 11;
-        cap = 'Interior · nidos, comederos, bebederos y aves'; phase = 6;
-      } else {
-        on.floor = on.litter = on.walls = on.mesh = on.structure = on.roof = on.equipment = true;
-        const u = s(20.4, CINE_DUR);
-        yaw = 0.55 + u * Math.PI * 2.05;
-        pitch = 0.40 + 0.14 * Math.sin(u * Math.PI * 2.2);
-        dist = fit * (1.02 + 0.26 * u);
-        sun = 5.4 + Math.min(1, u / 0.82) * 15.8;
-        cap = 'Gálibo completo · recorrido solar'; phase = 7;
-      }
+      const mk = [
+        { t: 0.0,  sc: 1, cap: 'Escena 1 · Piso de concreto elevado +0.20 m', add: ['floor'],        yaw: 2.30, pitch: 0.88, df: 1.34,  c: [W / 2, 1.5, L / 2], sun: 6.4 },
+        { t: 4.2,  sc: 2, cap: 'Escena 2 · Cama de aserrín de 6 cm',          add: ['litter'],       yaw: 3.02, pitch: 0.30, df: 1.00,  c: [W / 2, 1.6, L / 2], sun: 9.0 },
+        { t: 8.6,  sc: 3, cap: 'Escena 3 · Muros de bloque, culatas y malla antipájaros', add: ['walls', 'mesh'], yaw: 3.85, pitch: 0.15, df: 0.88, c: [W / 2, 1.8, L / 2], sun: 10.2 },
+        { t: 13.0, sc: 4, cap: 'Escena 4 · Pórticos cada ' + bayLayout(L).spacing.toFixed(2) + ' m · correas y tubos', add: ['structure'], yaw: 4.75, pitch: 0.26, df: 0.94, c: [W / 2, 2.0, L / 2], sun: 10.8 },
+        { t: 17.6, sc: 5, cap: 'Escena 5 · Cubierta de zinc · traslape ' + OVERLAP.toFixed(2) + ' m · abertura cenital', add: ['roof'], yaw: 5.85, pitch: 0.55, df: 1.12, c: [W / 2, 2.2, L / 2], sun: 11.3 },
+        { t: 21.8, sc: 5, cap: '',                                            add: [],               yaw: 6.30, pitch: 0.19, df: 0.86,  c: [W / 2, 1.8, L / 2], sun: 11.6 },
+        { t: 22.6, sc: 6, cap: 'Escena 6 · Recorrido interior · nidos, comederos y aves', add: ['equipment'], yaw: Math.PI + 0.06, pitch: 0.03, dist: 2.5, c: [W / 2, 1.32, 0.8], sun: 11.8 },
+        { t: 26.2, sc: 6, cap: '',                                            add: [],               yaw: Math.PI + 0.18, pitch: 0.045, dist: 2.25, c: [W / 2, 1.32, L * 0.38], sun: 12.3 },
+        { t: 29.8, sc: 6, cap: 'Nidos en dos niveles · líneas de niples · comederos campana', add: [], yaw: Math.PI + 0.14, pitch: 0.05, dist: 2.3, c: [W / 2, 1.35, L * 0.72], sun: 12.8 },
+        { t: 32.2, sc: 6, cap: '',                                            add: [],               yaw: Math.PI + 0.42, pitch: 0.06, dist: 2.6, c: [W / 2, 1.42, L - 1.4], sun: 13.4 },
+        { t: 33.9, sc: 6, cap: '',                                            add: [],               yaw: 0.22, pitch: 0.12, dist: 2.5,  c: [W / 2, 1.42, L - 1.2], sun: 13.9 },
+        { t: 36.4, sc: 7, cap: 'Escena 7 · Ciclo solar · gálibo completo',     add: [],               yaw: 1.05, pitch: 0.36, df: 1.06,  c: [W / 2, 1.8, L / 2], sun: 15.4 },
+        { t: CINE_DUR, sc: 7, cap: '', add: [], yaw: 2.15, pitch: 0.50, df: 1.30, c: [W / 2, 1.8, L / 2], sun: 18.2 }
+      ];
+
+      let i = 0;
+      while (i < mk.length - 2 && t >= mk[i + 1].t) i++;
+      const A = mk[i], B = mk[i + 1];
+      const u = e(s(A.t, B.t));
+
+      const distOf = (k) => (k.dist !== undefined ? k.dist : fit * k.df);
+      const lerp = (a, b) => a + (b - a) * u;
+      const camDist = lerp(distOf(A), distOf(B));
+      CAM.center = [lerp(A.c[0], B.c[0]), lerp(A.c[1], B.c[1]), lerp(A.c[2], B.c[2])];
+
+      const on = { floor: false, litter: false, walls: false, mesh: false, structure: false, roof: false, equipment: false };
+      for (let k = 0; k <= i; k++) for (const key of mk[k].add) on[key] = true;
 
       Object.assign(LAYERS, on);
       CINE_SHADOW = !!on.roof;
-      CAM.yaw = yaw;
-      CAM.pitch = clamp(pitch, 0.02, 1.5);
-      CAM.dist = dist;
-      SUN.hour = ((sun % 24) + 24) % 24;
-      return { cap, phase };
+      CAM.yaw = lerp(A.yaw, B.yaw);
+      CAM.pitch = clamp(lerp(A.pitch, B.pitch), 0.02, 1.5);
+      CAM.dist = camDist;
+      SUN.hour = ((lerp(A.sun, B.sun) % 24) + 24) % 24;
+      return { cap: (u < 0.92 ? A.cap : (B.cap || '')), sc: A.sc > 6 && t < 33.6 ? 6 : A.sc };
     }
 
     function cineRoundRect(ctx, x, y, w, h, r) {
@@ -3550,44 +3556,45 @@
     }
 
     function drawCineOverlay(ctx, t, cap) {
-      const Wc = 1280, Hc = 720;
+      const Wc = ctx.canvas.width, Hc = ctx.canvas.height, F = Wc / 1280;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
 
       if (t < 3.6) {
         const a = 1 - cineSeg(t, 2.6, 3.6);
         ctx.globalAlpha = a;
         ctx.fillStyle = 'rgba(8, 15, 26, 0.58)';
-        cineRoundRect(ctx, 44, 42, 486, 108, 14);
+        cineRoundRect(ctx, 44 * F, 42 * F, 486 * F, 108 * F, 14 * F);
         ctx.fill();
         ctx.fillStyle = '#ffffff';
-        ctx.font = '700 30px ui-sans-serif, system-ui, sans-serif';
+        ctx.font = `700 ${30 * F}px ui-sans-serif, system-ui, sans-serif`;
         ctx.textBaseline = 'alphabetic';
-        ctx.fillText('GALPÓN AVÍCOLA', 68, 86);
+        ctx.fillText('GALPÓN AVÍCOLA', 68 * F, 86 * F);
         ctx.fillStyle = '#bae6fd';
-        ctx.font = '600 19px ui-sans-serif, system-ui, sans-serif';
-        ctx.fillText(`${currentWidth.toFixed(2)} × ${currentLength.toFixed(2)} m · ${Math.floor(currentWidth * currentLength * currentDensity)} aves`, 68, 120);
+        ctx.font = `600 ${19 * F}px ui-sans-serif, system-ui, sans-serif`;
+        ctx.fillText(`${currentWidth.toFixed(2)} × ${currentLength.toFixed(2)} m · ${Math.floor(currentWidth * currentLength * currentDensity)} aves`, 68 * F, 120 * F);
         ctx.fillStyle = '#e2e8f0';
-        ctx.font = '500 14px ui-sans-serif, system-ui, sans-serif';
-        ctx.fillText('Techo asimétrico · ventilación cenital · clima cálido', 68, 140);
+        ctx.font = `500 ${14 * F}px ui-sans-serif, system-ui, sans-serif`;
+        ctx.fillText('Techo asimétrico · ventilación cenital · clima cálido', 68 * F, 140 * F);
         ctx.globalAlpha = 1;
       }
 
       if (cap) {
-        ctx.font = '600 19px ui-sans-serif, system-ui, sans-serif';
+        ctx.font = `600 ${19 * F}px ui-sans-serif, system-ui, sans-serif`;
         const tw = ctx.measureText(cap).width;
-        const bw = Math.min(Wc - 88, Math.max(320, tw + 64));
+        const bw = Math.min(Wc - 88 * F, Math.max(320 * F, tw + 64 * F));
         ctx.fillStyle = 'rgba(8, 15, 26, 0.62)';
-        cineRoundRect(ctx, 44, Hc - 96, bw, 50, 12);
+        cineRoundRect(ctx, 44 * F, Hc - 96 * F, bw, 50 * F, 12 * F);
         ctx.fill();
         ctx.fillStyle = '#e2e8f0';
         ctx.textBaseline = 'middle';
-        ctx.fillText(cap, 70, Hc - 70);
+        ctx.fillText(cap, 70 * F, Hc - 70 * F);
         ctx.textBaseline = 'alphabetic';
       }
 
       const fadeIn = 1 - cineSeg(t, 0, 0.6);
       const fadeOut = cineSeg(t, CINE_DUR - 1.0, CINE_DUR);
-      const fade = Math.max(fadeIn, fadeOut);
+      const cut = cineCutFade(t);
+      const fade = Math.max(fadeIn, fadeOut, cut);
       if (fade > 0.001) {
         ctx.fillStyle = `rgba(0,0,0,${fade})`;
         ctx.fillRect(0, 0, Wc, Hc);
@@ -3601,7 +3608,7 @@
       const info = applyCinematic(tt);
       const canvas = document.getElementById('cine-canvas');
       if (!canvas) { stopCinematic(true); return; }
-      render3D(canvas, [1280, 720]);
+      render3D(canvas, [1600, 900]);
       const ctx = canvas.getContext('2d');
       drawCineOverlay(ctx, tt, info.cap);
 
@@ -3612,7 +3619,7 @@
         const time = document.getElementById('cine-time');
         if (time) time.textContent = `${tt.toFixed(1)} s / ${CINE_DUR} s`;
         const capEl = document.getElementById('cine-caption');
-        if (capEl) capEl.textContent = `Capa ${info.phase} de 7 · ${info.cap}`;
+        if (capEl) capEl.textContent = `Escena ${info.sc} de 7 · ${info.cap}`;
       }
 
       if (t >= CINE_DUR) { stopCinematic(false); return; }
@@ -3638,17 +3645,19 @@
         cam: { yaw: CAM.yaw, pitch: CAM.pitch, dist: CAM.dist, center: CAM.center ? [...CAM.center] : null }
       };
 
-      canvas.width = 1280;
-      canvas.height = 720;
+      canvas.width = 1600;
+      canvas.height = 900;
       // Primer cuadro listo antes de que arranque el grabador (evita el arranque en negro)
       applyCinematic(0);
-      render3D(canvas, [1280, 720]);
+      render3D(canvas, [1600, 900]);
       drawCineOverlay(canvas.getContext('2d'), 0, '');
       const mime = pickVideoMime();
+      // Más bitrate a mayor resolución (1600×900): nítido y fluido
+      const bitrate = (mime || '').includes('mp4') ? 12000000 : 9000000;
       let rec;
       try {
         const stream = canvas.captureStream(30);
-        rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 5000000 } : undefined);
+        rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: bitrate } : undefined);
       } catch (err) {
         showToast('No se pudo iniciar la grabación', false);
         return;
@@ -3665,7 +3674,7 @@
       modal.classList.remove('hidden');
       modal.classList.add('flex');
       const st = document.getElementById('cine-status');
-      if (st) st.textContent = 'Grabando · capa por capa, ángulos y ciclo solar';
+      if (st) st.textContent = 'Grabando · escenas, recorrido interior y ciclo solar';
       const prog = document.getElementById('cine-progress');
       if (prog) prog.style.width = '0%';
 
