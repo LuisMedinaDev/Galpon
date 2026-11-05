@@ -16,13 +16,28 @@
     }
     svg text {
       user-select: none;
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: "Segoe UI", ui-sans-serif, system-ui, -apple-system, Roboto, sans-serif;
+      /* Halo blanco detrás del texto: etiquetas legibles sobre cualquier relleno */
+      paint-order: stroke fill;
+      stroke: #ffffff;
+      stroke-width: 3px;
+      stroke-linejoin: round;
+      font-weight: 700;
+    }
+    svg text[fill="#64748b"], svg text[fill="#475569"] {
+      fill: #334155;
     }
 
     /* ===== Visor de planos ===== */
     #plan-viewport {
       cursor: grab;
       touch-action: none;
+      /* Fondo tipo papel de dibujo técnico */
+      background-color: #eef2f7;
+      background-image:
+        linear-gradient(rgba(148, 163, 184, 0.22) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.22) 1px, transparent 1px);
+      background-size: 24px 24px;
     }
     #plan-viewport.dragging {
       cursor: grabbing;
@@ -37,11 +52,20 @@
     }
     #svg-container {
       box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+      /* Aspecto de hoja de lámina */
+      border-radius: 4px;
+      box-shadow: 0 1px 0 0 rgba(15, 23, 42, 0.08), 0 10px 24px -12px rgba(15, 23, 42, 0.28), inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+    }
+    /* Líneas de dibujo más nítidas */
+    #svg-container svg {
+      display: block;
+      shape-rendering: geometricPrecision;
     }
     #canvas3d {
       display: block;
       width: 100%;
       height: 540px;
+      touch-action: none;
     }
     @media (max-width: 640px) {
       #canvas3d { height: 340px; }
@@ -106,7 +130,7 @@
       box-shadow: 0 14px 36px rgba(15, 23, 42, 0.12), 0 1px 0 rgba(15, 23, 42, 0.05);
     }
     @media (max-width: 640px) {
-      #plan-viewport { min-height: 44vh; }
+      #plan-viewport { min-height: 62vh; }
       #legend-2d, #legend-3d { display: none !important; }
       footer.no-print { display: none; }
     }
@@ -259,7 +283,7 @@
             <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
             <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">Galpón Avícola · Techo Asimétrico</h1>
           </div>
-          <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5">Plano paramétrico · 5 láminas · 3D · presupuesto</p>
+          <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5">Plano paramétrico · 3 láminas · 3D · presupuesto</p>
         </div>
 
         <div class="flex items-center gap-1.5">
@@ -279,13 +303,13 @@
             <span>PDF</span>
           </button>
 
-          <button onclick="downloadAllSheetsPDF()" id="btn-download-all" title="Descargar las 5 láminas en un solo PDF"
+          <button onclick="downloadAllSheetsPDF()" id="btn-download-all" title="Descargar las 3 láminas en un solo PDF"
                   class="flex items-center gap-1.5 px-2.5 py-2 bg-sky-700 hover:bg-sky-800 text-white text-xs font-bold rounded-lg shadow-sm transition active:scale-95">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
             </svg>
             <span class="hidden md:inline">Juego completo</span>
-            <span class="md:hidden">5</span>
+            <span class="md:hidden">3</span>
           </button>
 
           <button onclick="window.print()" title="Imprimir / Guardar como PDF" aria-label="Imprimir o guardar como PDF"
@@ -297,18 +321,8 @@
         </div>
       </div>
 
-      <!-- Métricas en vivo -->
-      <div class="px-4 pb-3 flex flex-wrap items-center gap-1.5 text-[11px]">
-        <span class="px-2.5 py-1 rounded-md bg-slate-100 font-semibold text-slate-700" id="badge-area">Área: 128.0 m²</span>
-        <span class="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 font-bold border border-emerald-300" id="badge-aves">640 gallinas (5.0/m²)</span>
-        <span class="hidden sm:inline px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 font-medium" id="badge-techo">Techo: 10.40 x 17.20 m</span>
-        <span class="hidden lg:inline px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 font-semibold border border-amber-200">Muro: 0.30 m</span>
-        <span class="hidden lg:inline px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-800 font-semibold border border-indigo-200">Puerta P-1: 1.00 x 2.10 m</span>
-        <span class="hidden lg:inline px-2.5 py-1 rounded-md bg-sky-50 text-sky-800 font-semibold border border-sky-200">Abertura: 0.30 m</span>
-      </div>
-
       <!-- Controles de dimensión -->
-      <div class="px-4 py-3 bg-slate-50 border-y border-slate-200 grid grid-cols-2 gap-2 lg:grid-cols-4">
+      <div class="px-4 py-3 bg-slate-50 border-y border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-2 lg:grid-cols-4">
         <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 shadow-sm">
           <label for="input-ancho" class="text-xs font-bold text-slate-700 whitespace-nowrap">Ancho</label>
           <div class="flex items-center gap-1">
@@ -345,12 +359,9 @@
           </div>
         </div>
 
-        <div class="col-span-2 flex items-center gap-1.5 lg:col-span-1">
-          <button onclick="setPreset(6, 12)" data-preset="6x12" class="preset-btn">6 × 12</button>
-          <button onclick="setPreset(7, 14)" data-preset="7x14" class="preset-btn">7 × 14</button>
-          <button onclick="setPreset(8, 16)" data-preset="8x16" class="preset-btn">8 × 16</button>
+        <div class="col-span-2 flex justify-end lg:col-span-1">
           <button onclick="resetDimensions()" id="btn-reset" title="Volver a 8 × 16 m y 5 aves/m²"
-                  class="ml-auto p-1.5 rounded-lg text-slate-500 hover:bg-white hover:text-slate-800 border border-transparent hover:border-slate-300 transition" aria-label="Restablecer dimensiones">
+                  class="p-1.5 rounded-lg text-slate-500 hover:bg-white hover:text-slate-800 border border-transparent hover:border-slate-300 transition" aria-label="Restablecer dimensiones">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
             </svg>
@@ -361,26 +372,20 @@
 
     <!-- ================= PESTAÑAS ================= -->
     <nav class="no-print flex gap-1 px-3 py-2 border-b border-slate-200 overflow-x-auto no-scrollbar text-xs sm:text-sm bg-white">
-      <button onclick="setTab('corte')" id="btn-corte" class="tab-btn active px-2.5 sm:px-3 py-2 rounded-lg flex items-center gap-1.5 whitespace-nowrap">
-        <span class="text-[10px] font-bold opacity-60">1</span><span class="hidden sm:inline">Corte transversal</span><span class="sm:hidden">Corte</span>
-      </button>
-      <button onclick="setTab('planta')" id="btn-planta" class="tab-btn px-2.5 sm:px-3 py-2 rounded-lg flex items-center gap-1.5 whitespace-nowrap text-slate-500 hover:bg-slate-100 transition">
-        <span class="text-[10px] font-bold opacity-60">2</span><span>Planta</span>
+      <button onclick="setTab('planta')" id="btn-planta" class="tab-btn active px-2.5 sm:px-3 py-2 rounded-lg flex items-center gap-1.5 whitespace-nowrap">
+        <span>Planta</span>
       </button>
       <button onclick="setTab('frontal')" id="btn-frontal" class="tab-btn px-2.5 sm:px-3 py-2 rounded-lg flex items-center gap-1.5 whitespace-nowrap text-slate-500 hover:bg-slate-100 transition">
-        <span class="text-[10px] font-bold opacity-60">3</span><span class="hidden sm:inline">Fachada frontal</span><span class="sm:hidden">Frontal</span>
+        <span class="hidden sm:inline">Fachada frontal</span><span class="sm:hidden">Frontal</span>
       </button>
       <button onclick="setTab('fachada')" id="btn-fachada" class="tab-btn px-2.5 sm:px-3 py-2 rounded-lg flex items-center gap-1.5 whitespace-nowrap text-slate-500 hover:bg-slate-100 transition">
-        <span class="text-[10px] font-bold opacity-60">4</span><span class="hidden sm:inline">Fachada lateral</span><span class="sm:hidden">Lateral</span>
-      </button>
-      <button onclick="setTab('detalle')" id="btn-detalle" class="tab-btn px-2.5 sm:px-3 py-2 rounded-lg flex items-center gap-1.5 whitespace-nowrap text-slate-500 hover:bg-slate-100 transition">
-        <span class="text-[10px] font-bold opacity-60">5</span><span class="hidden sm:inline">Detalle cumbrera</span><span class="sm:hidden">Detalle</span>
+        <span class="hidden sm:inline">Fachada lateral</span><span class="sm:hidden">Lateral</span>
       </button>
       <button onclick="setTab('presupuesto')" id="btn-presupuesto" class="tab-btn px-2.5 sm:px-3 py-2 rounded-lg flex items-center gap-1.5 whitespace-nowrap text-slate-500 hover:bg-slate-100 transition">
-        <span class="text-[10px] font-bold opacity-60">6</span><span>Presupuesto</span>
+        <span>Presupuesto</span>
       </button>
       <button onclick="setTab('3d')" id="btn-3d" class="tab-btn ml-auto px-2.5 sm:px-3 py-2 rounded-lg flex items-center gap-1.5 whitespace-nowrap text-slate-500 hover:bg-slate-100 transition">
-        <span class="text-[10px] font-bold opacity-70">3D</span><span class="hidden sm:inline">Vista 3D</span>
+        <span class="hidden sm:inline">Vista 3D</span>
       </button>
     </nav>
 
@@ -405,8 +410,8 @@
         <!-- Barra de lámina y herramientas -->
         <div class="no-print flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-slate-100">
           <div class="flex items-center gap-2 min-w-0">
-            <span id="sheet-badge" class="text-[10px] font-bold uppercase tracking-wide text-sky-700 bg-sky-50 border border-sky-200 rounded px-1.5 py-0.5 whitespace-nowrap">Lámina 1 / 5</span>
-            <strong id="sheet-title" class="text-sm text-slate-800 truncate">Corte transversal</strong>
+            <span id="sheet-badge" class="text-[10px] font-bold uppercase tracking-wide text-sky-700 bg-sky-50 border border-sky-200 rounded px-1.5 py-0.5 whitespace-nowrap">Lámina 1 / 3</span>
+            <strong id="sheet-title" class="text-sm text-slate-800 truncate">Planta arquitectónica</strong>
             <span id="sheet-meta" class="hidden lg:inline text-[11px] text-slate-500 truncate">6.00 × 12.00 m · 72.0 m² · 360 aves</span>
           </div>
 
@@ -481,17 +486,19 @@
             <label class="flex cursor-pointer items-center gap-2 py-0.5"><input type="checkbox" class="accent-sky-600" checked onchange="setLayer('floor', this.checked)"> Piso de concreto</label>
           </div>
 
-          <div class="no-print absolute bottom-1 left-0 right-0 flex justify-start gap-1 overflow-x-auto no-scrollbar px-1.5 py-1 sm:bottom-2 sm:justify-center sm:px-0">
-            <div class="flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-white/90 p-1 shadow-sm">
-              <button onclick="set3DView('iso')" class="preset-btn">Isométrica</button>
-              <button onclick="set3DView('frente')" class="preset-btn">Frente</button>
-              <button onclick="set3DView('lateral')" class="preset-btn">Lateral</button>
-              <button onclick="set3DView('planta')" class="preset-btn">Planta</button>
-              <button onclick="set3DView('interior')" class="preset-btn">Interior</button>
-              <button onclick="toggle3DAuto()" id="btn-3d-auto" class="preset-btn">Auto</button>
-              <button onclick="toggleLayersPanel()" id="btn-3d-layers" class="preset-btn">Capas</button>
-              <button onclick="startCinematic()" id="btn-cine" class="preset-btn" title="Grabar una cinemática del galpón">▶ Video</button>
-            </div>
+        </div>
+
+        <!-- Barra de controles 3D (fuera del elemento 3D) -->
+        <div id="view3d-toolbar" class="no-print hidden flex items-center justify-center gap-1.5 px-3 py-2 border-t border-slate-100 bg-white">
+          <div class="flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-white/95 p-1 shadow-sm">
+            <button onclick="set3DView('iso')" class="preset-btn" title="Vista isométrica">Isométrica</button>
+            <button onclick="set3DView('frente')" class="preset-btn" title="Vista frontal">Frente</button>
+            <button onclick="set3DView('lateral')" class="preset-btn" title="Vista lateral">Lateral</button>
+            <button onclick="set3DView('planta')" class="preset-btn" title="Vista planta">Planta</button>
+            <button onclick="set3DView('interior')" class="preset-btn" title="Vista interior">Interior</button>
+            <button onclick="toggle3DAuto()" id="btn-3d-auto" class="preset-btn" title="Rotación automática">Auto</button>
+            <button onclick="toggleLayersPanel()" id="btn-3d-layers" class="preset-btn" title="Mostrar/ocultar capas">Capas</button>
+            <button onclick="startCinematic()" id="btn-cine" class="preset-btn" title="Grabar una cinemática del galpón">▶ Video</button>
           </div>
         </div>
 
@@ -511,47 +518,11 @@
           <div id="budget-totals" class="border-t border-slate-200 bg-slate-50 px-3 py-3"></div>
         </div>
 
-        <!-- Leyenda -->
-        <div class="no-print flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2 border-t border-slate-100 text-[11px] text-slate-600">
-          <div id="legend-2d" class="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <span class="flex items-center gap-1.5"><i class="inline-block h-1.5 w-3.5 rounded-sm bg-red-600"></i>Vertiente baja · 3.70 m</span>
-            <span class="flex items-center gap-1.5"><i class="inline-block h-1.5 w-3.5 rounded-sm bg-blue-600"></i>Vertiente alta · 4.00 m</span>
-            <span class="flex items-center gap-1.5"><i class="inline-block h-1.5 w-3.5 rounded-sm bg-emerald-500"></i>Abertura cenital 0.30 m</span>
-            <span class="flex items-center gap-1.5"><i class="inline-block h-1.5 w-3.5 rounded-sm bg-amber-500"></i>Flujo de aire</span>
-            <span class="flex items-center gap-1.5"><i class="inline-block h-1.5 w-3.5 rounded-sm bg-slate-500"></i>Muro de bloque 0.30 m</span>
-          </div>
-          <div id="legend-3d" class="flex-wrap items-center gap-x-4 gap-y-1" style="display:none">
-            <span class="flex items-center gap-1.5"><i class="inline-block h-1.5 w-3.5 rounded-sm bg-slate-300 border border-slate-400"></i>Lámina de zinc</span>
-            <span class="flex items-center gap-1.5"><i class="inline-block h-1.5 w-3.5 rounded-sm bg-slate-400 border border-slate-500"></i>Malla metálica</span>
-            <span class="flex items-center gap-1.5"><i class="inline-block h-1.5 w-3.5 rounded-sm bg-amber-800"></i>Estructura</span>
-            <span class="flex items-center gap-1.5"><i class="inline-block h-1.5 w-3.5 rounded-sm bg-orange-600"></i>Comederos</span>
-            <span class="flex items-center gap-1.5"><i class="inline-block h-1.5 w-3.5 rounded-sm bg-slate-500"></i>Bebederos</span>
-            <span class="flex items-center gap-1.5"><i class="inline-block h-1.5 w-3.5 rounded-sm bg-amber-200 border border-amber-300"></i>Cama de aserrín</span>
-            <span class="flex items-center gap-1.5"><i class="inline-block h-1.5 w-3.5 rounded-sm border border-stone-400 bg-stone-200"></i>Aves</span>
-          </div>
-        </div>
+
       </div>
     </main>
 
-    <!-- ================= PIE CON ESPECIFICACIONES ================= -->
-    <footer class="p-3 bg-slate-50 border-t border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs no-print">
-      <div class="p-2 rounded-lg bg-white border border-slate-200">
-        <span class="text-slate-500 text-[11px] block">Alerones laterales</span>
-        <strong class="text-slate-800 text-sm">1.20 m c/u</strong>
-      </div>
-      <div class="p-2 rounded-lg bg-white border border-slate-200">
-        <span class="text-slate-500 text-[11px] block">Alerón de culata</span>
-        <strong class="text-slate-800 text-sm">0.60 m c/u</strong>
-      </div>
-      <div class="p-2 rounded-lg bg-white border border-slate-200">
-        <span class="text-slate-500 text-[11px] block">Pared lateral</span>
-        <strong class="text-slate-800 text-sm">3.00 m · muro 0.30 m</strong>
-      </div>
-      <div class="p-2 rounded-lg bg-white border border-slate-200">
-        <span class="text-slate-500 text-[11px] block">Piso</span>
-        <strong class="text-slate-800 text-sm">+0.20 m · 1.0%</strong>
-      </div>
-    </footer>
+
 
   </div>
 
@@ -584,11 +555,12 @@
     <span id="toast-msg">Mensaje</span>
   </div>
   <script>
-    let currentTab = 'corte';
+    let currentTab = 'planta';
     let currentWidth = 8.0;
     let currentLength = 16.0;
     let currentDensity = 5.0;
     let sheetPxPerM = 66.7; // escala de la lámina activa (px de dibujo por metro)
+    let renderTimer = null; // debounce para evitar render en cada tecla
 
     // ---- Parámetros de diseño (m) ----
     const FLOOR_H = 0.20;                        // piso elevado sobre NTN
@@ -648,7 +620,7 @@
 
     function setTab(tabId) {
       currentTab = tabId;
-      ['corte', 'planta', 'frontal', 'fachada', 'detalle', 'presupuesto', '3d'].forEach(id => {
+      ['planta', 'frontal', 'fachada', 'presupuesto', '3d'].forEach(id => {
         const btn = document.getElementById('btn-' + id);
         if (btn) {
           if (id === tabId) {
@@ -684,8 +656,11 @@
     }
 
     function setPreset(w, l) {
-      document.getElementById('input-ancho').value = w.toFixed(1);
-      document.getElementById('input-largo').value = l.toFixed(1);
+      const wEl = document.getElementById('input-ancho');
+      const lEl = document.getElementById('input-largo');
+      if (!wEl || !lEl) return;
+      wEl.value = w.toFixed(1);
+      lEl.value = l.toFixed(1);
       updateDimensions();
     }
 
@@ -714,6 +689,9 @@
       const lEl = document.getElementById('input-largo');
       const dEl = document.getElementById('input-densidad');
 
+      // Si no hay controles de dimensión (eliminados), no hay nada que sanear
+      if (!wEl || !lEl || !dEl) return;
+
       // Sanea la entrada: evita valores vacíos, NaN o fuera de rango
       currentWidth = clamp(numOr(wEl.value, currentWidth), 4.0, 14.0);
       currentLength = clamp(numOr(lEl.value, currentLength), 6.0, 40.0);
@@ -722,23 +700,33 @@
       const area = currentWidth * currentLength;
       const aves = Math.floor(area * currentDensity);
 
-      document.getElementById('badge-area').innerText = `Área: ${area.toFixed(1)} m²`;
-      document.getElementById('badge-aves').innerText = `${aves} gallinas (${currentDensity.toFixed(1)}/m²)`;
-      document.getElementById('badge-techo').innerText =
-        `Techo: ${(currentWidth + 2 * EAVE_OVERHANG).toFixed(2)} x ${(currentLength + 2 * GABLE_OVERHANG).toFixed(2)} m`;
+      const elArea = document.getElementById('badge-area');
+      const elAves = document.getElementById('badge-aves');
+      const elDens = document.getElementById('badge-dens');
+      const elDimens = document.getElementById('badge-dimens');
+      if (elArea) elArea.innerText = `${area.toFixed(1)} m²`;
+      if (elAves) elAves.innerText = `${aves} gallinas`;
+      if (elDens) elDens.innerText = `(${currentDensity.toFixed(1)}/m²)`;
+      if (elDimens) elDimens.innerText = `${currentWidth.toFixed(1)} × ${currentLength.toFixed(1)} m`;
 
       updatePresetState();
       updatePrintHeader();
-      renderCurrentView();
       updateScaleBar();
       if (currentTab === 'presupuesto') renderBudget();
-      if (currentTab === '3d') {
-        if (!scene3D || scene3D.size[0] !== currentWidth || scene3D.size[1] !== currentLength || scene3D.birdsTotal !== aves) {
-          rebuild3D();
-          CAM.dist = fit3DDistance();
+
+      // Debounce: evita re-renderizar en cada pulsación de tecla
+      if (renderTimer) clearTimeout(renderTimer);
+      renderTimer = setTimeout(() => {
+        renderTimer = null;
+        renderCurrentView();
+        if (currentTab === '3d') {
+          if (!scene3D || scene3D.size[0] !== currentWidth || scene3D.size[1] !== currentLength || scene3D.birdsTotal !== aves) {
+            rebuild3D();
+            CAM.dist = fit3DDistance();
+          }
+          render3D();
         }
-        render3D();
-      }
+      }, 150);
     }
 
     // Marca el preset activo según las dimensiones actuales
@@ -762,9 +750,13 @@
     }
 
     function resetDimensions() {
-      document.getElementById('input-ancho').value = '8.0';
-      document.getElementById('input-largo').value = '16.0';
-      document.getElementById('input-densidad').value = '5.0';
+      const wEl = document.getElementById('input-ancho');
+      const lEl = document.getElementById('input-largo');
+      const dEl = document.getElementById('input-densidad');
+      if (!wEl || !lEl || !dEl) return;
+      wEl.value = '8.0';
+      lEl.value = '16.0';
+      dEl.value = '5.0';
       updateDimensions();
       fitView();
       showToast('Dimensiones restablecidas: 8 × 16 m');
@@ -772,18 +764,20 @@
 
     // Reescribe los campos con el valor realmente usado (al salir del input)
     function sanitizeInputs() {
-      document.getElementById('input-ancho').value = currentWidth.toFixed(1);
-      document.getElementById('input-largo').value = currentLength.toFixed(1);
-      document.getElementById('input-densidad').value = currentDensity.toFixed(1);
+      const wEl = document.getElementById('input-ancho');
+      const lEl = document.getElementById('input-largo');
+      const dEl = document.getElementById('input-densidad');
+      if (!wEl || !lEl || !dEl) return;
+      wEl.value = currentWidth.toFixed(1);
+      lEl.value = currentLength.toFixed(1);
+      dEl.value = currentDensity.toFixed(1);
     }
 
     function updatePrintHeader() {
       const titles = {
-        'corte': 'LÁMINA 1: CORTE TRANSVERSAL (TECHO ASIMÉTRICO / DESFASADO)',
-        'planta': 'LÁMINA 2: PLANTA ARQUITECTÓNICA Y ESTRUCTURAL CON PUERTA FRONTAL',
-        'frontal': 'LÁMINA 3: FACHADA FRONTAL / CULATA CON PUERTA ESTÁNDAR (1.00 x 2.10 m)',
-        'fachada': 'LÁMINA 4: FACHADA LATERAL LONGITUDINAL CON VENTILACIÓN CENITAL',
-        'detalle': 'LÁMINA 5: DETALLE TÉCNICO DE CUMBRERA DESFASADA',
+        'planta': 'LÁMINA 1: PLANTA ARQUITECTÓNICA Y ESTRUCTURAL CON PUERTA FRONTAL',
+        'frontal': 'LÁMINA 2: FACHADA FRONTAL / CULATA CON PUERTA ESTÁNDAR (1.00 x 2.10 m)',
+        'fachada': 'LÁMINA 3: FACHADA LATERAL LONGITUDINAL CON VENTILACIÓN CENITAL',
         'presupuesto': 'PRESUPUESTO ESTIMADO DE MATERIALES'
       };
       const titleElem = document.getElementById('print-sheet-title');
@@ -796,15 +790,13 @@
       // Barra de lámina del visor
       const is3d = currentTab === '3d';
       const shortNames = {
-        corte: 'Corte transversal',
         planta: 'Planta arquitectónica',
         frontal: 'Fachada frontal (puerta)',
         fachada: 'Fachada lateral',
-        detalle: 'Detalle de cumbrera',
         'presupuesto': 'Presupuesto de materiales',
         '3d': 'Vista 3D del galpón'
       };
-      const order = ['corte', 'planta', 'frontal', 'fachada', 'detalle'];
+      const order = ['planta', 'frontal', 'fachada'];
       const idx = order.indexOf(currentTab) + 1;
       const isBudget = currentTab === 'presupuesto';
       const st = document.getElementById('sheet-title');
@@ -815,7 +807,7 @@
       if (sm) {
         const bay = bayLayout(currentLength);
         const dims = `${currentWidth.toFixed(2)} × ${currentLength.toFixed(2)} m · ${(currentWidth * currentLength).toFixed(1)} m² · ${Math.floor(currentWidth * currentLength * currentDensity)} aves`;
-        sm.textContent = isBudget ? `${dims} · materiales e insumos` : `${dims} · pórticos cada ${bay.spacing.toFixed(2)} m`;
+        sm.textContent = isBudget ? `${dims} · materiales e insumos` : `${dims}`;
       }
       if (is3d && titleElem) titleElem.innerText = 'VISTA 3D · PERSPECTIVA DEL GALPÓN';
       if (isBudget && titleElem) titleElem.innerText = 'PRESUPUESTO · MATERIALES E INSUMOS';
@@ -874,11 +866,9 @@
 
     function renderCurrentView() {
       const container = document.getElementById('svg-container');
-      if (currentTab === 'corte') container.innerHTML = getCorteSVG();
-      else if (currentTab === 'planta') container.innerHTML = getPlantaSVG();
+      if (currentTab === 'planta') container.innerHTML = getPlantaSVG();
       else if (currentTab === 'frontal') container.innerHTML = getFrontalSVG();
       else if (currentTab === 'fachada') container.innerHTML = getFachadaSVG();
-      else if (currentTab === 'detalle') container.innerHTML = getDetalleSVG();
     }
 
     // ==========================================
@@ -940,7 +930,7 @@
       const doorTopY = secY - flrH - doorH_px;
 
       return `
-        <svg viewBox="0 0 920 440" class="w-full max-w-4xl h-auto" style="min-width: 680px;" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 920 440" class="w-full max-w-4xl h-auto" xmlns="http://www.w3.org/2000/svg">
           <!-- Terreno Natural NTN ±0.00 -->
           <line x1="30" y1="${secY}" x2="890" y2="${secY}" stroke="#64748b" stroke-width="1.8"/>
           <text x="40" y="${secY + 18}" fill="#64748b" font-size="11" font-weight="bold">NTN ±0.00</text>
@@ -1113,7 +1103,7 @@
       const overlapY = ridgeY - (OVERLAP * sc);
 
       return `
-        <svg viewBox="0 0 920 440" class="w-full max-w-4xl h-auto" style="min-width: 680px;" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 920 440" class="w-full max-w-4xl h-auto" xmlns="http://www.w3.org/2000/svg">
           <!-- Proyección del Techo (Línea discontinua roja) -->
           <rect x="${ox - eGable_px}" y="${oy - eLat_px}" width="${gL_px + 2*eGable_px}" height="${gW_px + 2*eLat_px}" 
                 fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="5 3" rx="2"/>
@@ -1226,6 +1216,12 @@
       const overlapTipX = midX - overlap_px;
       const overlapTipY = highRidgeY - overlap_px * rightSlope;
 
+      // Tensor alto (collarín) del pórtico de culata — misma geometría que el 3D y el corte
+      const geoF = roofModel(W);
+      const tieYpx = secY - flrH - (geoF.tieY - FLOOR_H) * VSCALE;
+      const tieX1px = secX + geoF.tieX1 * sc;
+      const tieX2px = secX + geoF.tieX2 * sc;
+
       // PUERTA FRONTAL ESTÁNDAR (1.00 x 2.10 m)
       const doorW_px = DOOR_W * sc;
       const doorH_px = DOOR_H * VSCALE;
@@ -1233,7 +1229,7 @@
       const doorTopY = secY - flrH - doorH_px;
 
       return `
-        <svg viewBox="0 0 920 440" class="w-full max-w-4xl h-auto" style="min-width: 680px;" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 920 440" class="w-full max-w-4xl h-auto" xmlns="http://www.w3.org/2000/svg">
           <!-- Terreno Natural NTN ±0.00 -->
           <line x1="30" y1="${secY}" x2="890" y2="${secY}" stroke="#64748b" stroke-width="1.8"/>
           <text x="40" y="${secY + 18}" fill="#64748b" font-size="11" font-weight="bold">NTN ±0.00</text>
@@ -1256,6 +1252,12 @@
           <line x1="${secX}" y1="${secY - flrH}" x2="${secX}" y2="${eaveY}" stroke="#0f172a" stroke-width="2.5"/>
           <line x1="${secX + gW_px}" y1="${secY - flrH}" x2="${secX + gW_px}" y2="${eaveY}" stroke="#0f172a" stroke-width="2.5"/>
           <line x1="${midX}" y1="${doorTopY}" x2="${midX}" y2="${lowRidgeY}" stroke="#0f172a" stroke-width="2.2"/>
+
+          <!-- TENSOR ALTO (COLLARÍN) DEL PÓRTICO DE CULATA -->
+          <line x1="${tieX1px}" y1="${tieYpx}" x2="${tieX2px}" y2="${tieYpx}" stroke="#334155" stroke-width="2.4"/>
+          <circle cx="${tieX1px}" cy="${tieYpx}" r="2.6" fill="#334155"/>
+          <circle cx="${tieX2px}" cy="${tieYpx}" r="2.6" fill="#334155"/>
+          <text x="${(tieX1px + midX) / 2}" y="${tieYpx + 12}" fill="#334155" font-size="9" font-weight="bold" text-anchor="middle">Tensor alto (collarín)</text>
 
           <!-- PUERTA ESTÁNDAR P-1 (1.00 x 2.10 m) EN PRIMER PLANO -->
           <!-- Marco exterior -->
@@ -1353,7 +1355,7 @@
       }
 
       return `
-        <svg viewBox="0 0 920 440" class="w-full max-w-4xl h-auto" style="min-width: 680px;" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 920 440" class="w-full max-w-4xl h-auto" xmlns="http://www.w3.org/2000/svg">
           <!-- Terreno Natural NTN -->
           <line x1="30" y1="${longY}" x2="890" y2="${longY}" stroke="#64748b" stroke-width="1.8"/>
           <text x="40" y="${longY + 18}" fill="#64748b" font-size="11" font-weight="bold">NTN ±0.00</text>
@@ -1433,7 +1435,7 @@
       }
 
       return `
-        <svg viewBox="0 0 920 440" class="w-full max-w-4xl h-auto" style="min-width: 680px;" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 920 440" class="w-full max-w-4xl h-auto" xmlns="http://www.w3.org/2000/svg">
           <!-- Columna central que sostiene la cumbrera baja -->
           <rect x="${cx - 5}" y="${yLow}" width="10" height="${400 - yLow}" fill="#0f172a"/>
           <text x="${cx + 15}" y="392" fill="#475569" font-size="11" font-weight="bold">Columna central</text>
@@ -1490,7 +1492,7 @@
           <text x="${cx + 34}" y="${midVent + 6}" font-size="14" font-weight="bold" fill="#10b981" text-anchor="middle">${VENT_GAP.toFixed(2)}</text>
 
           <!-- Leyenda del detalle -->
-          <text x="40" y="34" fill="#475569" font-size="11" font-weight="bold">Abertura cenital ${VENT_GAP.toFixed(2)} m con malla antipájaros · traslape ${OVERLAP.toFixed(2)} m · tubo de borde en el ala alta</text>
+
         </svg>
       `;
     }
@@ -1637,7 +1639,7 @@
     async function downloadAllSheetsPDF() {
       const btn = document.getElementById('btn-download-all');
       const originalText = btn.innerHTML;
-      btn.innerHTML = `<span class="animate-spin">⏳</span><span>Compilando 5 Láminas...</span>`;
+      btn.innerHTML = `<span class="animate-spin">⏳</span><span>Compilando 3 Láminas...</span>`;
       btn.disabled = true;
 
       try {
@@ -1648,11 +1650,9 @@
         }
 
         const sheets = [
-          { id: 'corte', title: SHEET_TITLES.corte, getSvg: getCorteSVG },
           { id: 'planta', title: SHEET_TITLES.planta, getSvg: getPlantaSVG },
           { id: 'frontal', title: SHEET_TITLES.frontal, getSvg: getFrontalSVG },
-          { id: 'fachada', title: SHEET_TITLES.fachada, getSvg: getFachadaSVG },
-          { id: 'detalle', title: SHEET_TITLES.detalle, getSvg: getDetalleSVG }
+          { id: 'fachada', title: SHEET_TITLES.fachada, getSvg: getFachadaSVG }
         ];
 
         const { jsPDF } = window.jspdf;
@@ -1681,7 +1681,7 @@
           pdf.text(`Galpón Avícola: ${currentWidth.toFixed(2)} x ${currentLength.toFixed(2)} m (${(currentWidth * currentLength).toFixed(1)} m²) | Capacidad: ${Math.floor(currentWidth * currentLength * currentDensity)} aves`, 14, 19.5);
           
           pdf.setFont('helvetica', 'bold');
-          pdf.text(`LÁMINA ${i + 1} DE 5`, 282, 17, { align: 'right' });
+          pdf.text(`LÁMINA ${i + 1} DE 3`, 282, 17, { align: 'right' });
 
           // Gráfico
           fitPlanInBox(pdf, imgData);
@@ -1693,12 +1693,12 @@
           pdf.setTextColor(71, 85, 105);
           pdf.setFont('helvetica', 'normal');
           pdf.text('Diseño bioclimático para clima cálido | Ventilación Cenital Asimétrica | Puerta Estándar 1.00 x 2.10 m', 14, 202);
-          pdf.text(`Lámina ${i + 1}/5 - Cotas en metros (m)`, 282, 202, { align: 'right' });
+          pdf.text(`Lámina ${i + 1}/3 - Cotas en metros (m)`, 282, 202, { align: 'right' });
         }
 
         const fileName = `Juego_Completo_Galpon_${currentWidth.toFixed(1)}x${currentLength.toFixed(1)}m.pdf`;
         pdf.save(fileName);
-        showToast(`¡Juego completo descargado (5 láminas)!`, true);
+        showToast(`¡Juego completo descargado (3 láminas)!`, true);
       } catch (err) {
         console.error('Error generando dossier completo:', err);
         window.print();
@@ -1911,7 +1911,7 @@
       const model = budgetModel();
       const bay = bayLayout(currentLength);
       if (sub) {
-        sub.textContent = `${currentWidth.toFixed(2)} × ${currentLength.toFixed(2)} m · ${(currentWidth * currentLength).toFixed(1)} m² · ${model.birds} aves · ${bay.count + 1} pórticos cada ${bay.spacing.toFixed(2)} m`;
+        sub.textContent = `${currentWidth.toFixed(2)} × ${currentLength.toFixed(2)} m · ${(currentWidth * currentLength).toFixed(1)} m² · ${model.birds} aves`;
       }
 
       let html = `<div class="b-head"><span>Material / insumo</span><span class="text-right">Cant.</span><span class="text-right">P. unitario</span><span class="text-right">Subtotal</span></div>`;
@@ -2301,7 +2301,7 @@
       document.addEventListener('keydown', (e) => {
         const tag = (e.target && e.target.tagName ? e.target.tagName : '').toLowerCase();
         if (tag === 'input' || tag === 'textarea' || (e.target && e.target.isContentEditable)) return;
-        const tabs = ['corte', 'planta', 'frontal', 'fachada', 'detalle', 'presupuesto', '3d'];
+        const tabs = ['planta', 'frontal', 'fachada', 'presupuesto', '3d'];
         if (e.key === '+' || e.key === '=') { zoomStep(1); e.preventDefault(); }
         else if (e.key === '-' || e.key === '_') { zoomStep(-1); e.preventDefault(); }
         else if (e.key === '0') { fitView(); e.preventDefault(); }
@@ -2435,8 +2435,8 @@
       let semilla = 987654321;
       const rnd = () => { semilla = (semilla * 16807) % 2147483647; return semilla / 2147483647; };
       const grassTones = ['rgba(54,84,36,0.85)', 'rgba(84,118,48,0.9)', 'rgba(108,142,70,0.9)', 'rgba(128,158,86,0.85)'];
-      // Densidad de pasto pareja sin importar el tamaño del galpón
-      const tuftTries = Math.min(1400, Math.round(900 * ((W + 40) * (L + 40)) / 2392));
+      // Densidad de pasto reducida para mejor rendimiento (menos trazos individuales)
+      const tuftTries = Math.min(220, Math.round(180 * ((W + 40) * (L + 40)) / 2392));
       for (let i = 0; i < tuftTries; i++) {
         const x = -20 + rnd() * (W + 40);
         const z = -20 + rnd() * (L + 40);
@@ -2464,7 +2464,7 @@
       box(0.12, W - 0.12, NPT, NPT + 0.06, 0.12, L - 0.12, '#cbb083', 'litter');
       // Virutas de aserrín sobre la superficie
       const virutas = [];
-      for (let i = 0; i < 340; i++) {
+      for (let i = 0; i < 100; i++) {
         const x = 0.25 + rnd() * (W - 0.5);
         const z = 0.25 + rnd() * (L - 0.5);
         const a = rnd() * Math.PI;
@@ -2491,6 +2491,8 @@
       wallPanel(W - TH, W, 0, L);
       wallPanel(0, dx0, 0, TH);
       wallPanel(dx1, W, 0, TH);
+      wallPanel(dx0, dx1, 0, TH);
+
       // Junta de mortero a media altura (hilada de bloque)
       const JY = NPT + WALL_H / 2, JH = 0.018, JC = '#8b9197';
       quad([[-0.004, JY - JH, 0], [-0.004, JY - JH, L], [-0.004, JY + JH, L], [-0.004, JY + JH, 0]], JC, 1, 'wall');
@@ -2512,16 +2514,12 @@
       beam([dx0, NPT, 0.075], [dx0, NPT + DOOR_H, 0.075], 0.06, '#4b5563', 'door');
       beam([dx1, NPT, 0.075], [dx1, NPT + DOOR_H, 0.075], 0.06, '#4b5563', 'door');
       beam([dx0, NPT + DOOR_H, 0.075], [dx1, NPT + DOOR_H, 0.075], 0.06, '#4b5563', 'door');
-      // Segunda puerta en la culata trasera (igual que en las láminas 1 y 3)
-      box(dx0 + 0.05, dx1 - 0.05, NPT, NPT + DOOR_H, L - 0.12, L - 0.03, '#6b7a8f', 'door');
-      beam([dx0, NPT, L - 0.075], [dx0, NPT + DOOR_H, L - 0.075], 0.06, '#4b5563', 'door');
-      beam([dx1, NPT, L - 0.075], [dx1, NPT + DOOR_H, L - 0.075], 0.06, '#4b5563', 'door');
-      beam([dx0, NPT + DOOR_H, L - 0.075], [dx1, NPT + DOOR_H, L - 0.075], 0.06, '#4b5563', 'door');
-
+      // Soporte central de la puerta: tubo que baja del tubular de cumbrera al dintel (culata frontal)
+      beam([W / 2, NPT + DOOR_H, 0.075], [W / 2, LOW - 0.11, 0.075], 0.05, '#4b5563', 'structure');
       // ---- Estructura de cubierta (idéntica a la del corte 2D) ----
       const woods = ['#8a5a33', '#93653c', '#7d5029', '#9a6d43'];
       const pickWood = () => woods[Math.floor(rnd() * woods.length)];
-      const STEEL = '#3f4a57';
+      const STEEL = '#101214';
       // Un solo tubular de cumbrera, corrido en todo el largo
       beam([W / 2, LOW - 0.11, -oC], [W / 2, LOW - 0.11, L + oC], 0.15, STEEL, 'structure');
       // Correas de alero, justo encima de la línea de columnas (hasta el borde de la lámina)
@@ -2658,7 +2656,7 @@
 
       // ---- Gallinas: muestra representativa escalada con el área y la densidad ----
       const HEN = ['#f2ecdf', '#e6d7b8', '#c98b52', '#9c6440', '#efe4cd'];
-      const nHens = Math.min(96, Math.max(16, Math.round(birds / 5)));
+      const nHens = Math.min(30, Math.max(8, Math.round(birds / 8)));
       const henAt = (hx, hz) => {
         if (hx < 0.75 || hx > W - 0.75 || hz < 0.7 || hz > L - 0.7) return;
         const ry = rnd() * Math.PI * 2;
@@ -2846,7 +2844,7 @@
       const cssW = forcedSize ? forcedSize[0] : (cv.clientWidth || 900);
       const cssH = forcedSize ? forcedSize[1] : (cv.clientHeight || 500);
       // Resolución interna: al menos 2x para que la escena se vea nítida
-      const dpr = forcedSize ? 1 : Math.min(2.5, Math.max(2, window.devicePixelRatio || 1));
+      const dpr = forcedSize ? 1 : Math.min(2, Math.max(1, window.devicePixelRatio || 1));
       if (cv.width !== Math.round(cssW * dpr) || cv.height !== Math.round(cssH * dpr)) {
         cv.width = Math.round(cssW * dpr);
         cv.height = Math.round(cssH * dpr);
@@ -3084,7 +3082,8 @@
         if (clipped.length < 3) continue;
         const p2 = screenPts(clipped);
         let depth = 0;
-        for (const q of clipped) depth = Math.max(depth, q.z);
+        for (const q of clipped) depth += q.z;
+        depth /= clipped.length;
 
         const a = face.pts[0], b = face.pts[1], c = face.pts[2];
         const centroid = [(a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3, (a[2] + b[2] + c[2]) / 3];
@@ -3306,23 +3305,58 @@
       const cv = document.getElementById('canvas3d');
       if (!cv) return;
 
-      cv.addEventListener('pointerdown', (e) => {
-        CAM.drag = { x: e.clientX, y: e.clientY };
+      const active3d = new Map();
+      let pinch3d = null;
+
+      const start = (e) => {
+        e.preventDefault(); // prevenir scroll en móvil
+        active3d.set(e.pointerId, { x: e.clientX, y: e.clientY });
         if (cv.setPointerCapture) { try { cv.setPointerCapture(e.pointerId); } catch (_) {} }
-        cv.style.cursor = 'grabbing';
-      });
-      cv.addEventListener('pointermove', (e) => {
+        if (active3d.size === 1) {
+          CAM.drag = { x: e.clientX, y: e.clientY };
+          pinch3d = null;
+          cv.style.cursor = 'grabbing';
+        } else if (active3d.size >= 2) {
+          CAM.drag = null;
+          const [a, b] = [...active3d.values()];
+          pinch3d = { dist: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)) };
+          cv.style.cursor = 'grabbing';
+        }
+      };
+
+      const move = (e) => {
+        if (!active3d.has(e.pointerId)) return;
+        active3d.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        if (pinch3d && active3d.size >= 2) {
+          const [a, b] = [...active3d.values()];
+          const d = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y));
+          if (Math.abs(d - pinch3d.dist) > 0.5) {
+            zoom3D(d / pinch3d.dist);
+            pinch3d.dist = d;
+          }
+          return;
+        }
+
         if (!CAM.drag) return;
         CAM.yaw -= (e.clientX - CAM.drag.x) * (CAM.center ? 0.004 : 0.008);
         CAM.pitch = clamp(CAM.pitch + (e.clientY - CAM.drag.y) * (CAM.center ? 0.003 : 0.006), 0.02, 1.5);
         CAM.drag = { x: e.clientX, y: e.clientY };
         render3D();
-      });
+      };
+
       const end = (e) => {
-        CAM.drag = null;
-        cv.style.cursor = 'grab';
+        active3d.delete(e.pointerId);
+        if (active3d.size < 2) pinch3d = null;
+        if (active3d.size === 0) {
+          CAM.drag = null;
+          cv.style.cursor = 'grab';
+        }
         if (cv.releasePointerCapture) { try { cv.releasePointerCapture(e.pointerId); } catch (_) {} }
       };
+
+      cv.addEventListener('pointerdown', start);
+      cv.addEventListener('pointermove', move);
       cv.addEventListener('pointerup', end);
       cv.addEventListener('pointercancel', end);
       cv.addEventListener('wheel', (e) => {
@@ -3343,20 +3377,21 @@
       const v3 = document.getElementById('view3d');
       const zg = document.getElementById('zoom-group');
       const sc = document.getElementById('scale-chip');
+      const tb = document.getElementById('view3d-toolbar');
       if (vp) vp.classList.add('hidden');
       if (v3) v3.classList.remove('hidden');
       if (zg) zg.classList.add('hidden');
       if (sc) sc.classList.add('hidden');
+      if (tb) tb.classList.remove('hidden');
       const l2 = document.getElementById('legend-2d');
-      const l3 = document.getElementById('legend-3d');
       const png = document.getElementById('btn-download-png');
       if (png) png.classList.remove('hidden');
       if (l2) l2.style.display = 'none';
-      if (l3) l3.style.display = 'flex';
       rebuild3D();
       CAM.center = null;
       CAM.dist = fit3DDistance();
       syncSunUI();
+      init3D();
       render3D();
     }
 
@@ -3378,16 +3413,16 @@
       const v3 = document.getElementById('view3d');
       const zg = document.getElementById('zoom-group');
       const sc = document.getElementById('scale-chip');
+      const tb = document.getElementById('view3d-toolbar');
       const png = document.getElementById('btn-download-png');
       if (v3) v3.classList.add('hidden');
       if (vp) vp.classList.remove('hidden');
       if (zg) zg.classList.remove('hidden');
       if (sc) sc.classList.remove('hidden');
+      if (tb) tb.classList.add('hidden');
       if (png) png.classList.remove('hidden');
       const l2 = document.getElementById('legend-2d');
-      const l3 = document.getElementById('legend-3d');
       if (l2) l2.style.display = '';
-      if (l3) l3.style.display = 'none';
       stop3D();
     }
 
