@@ -130,6 +130,9 @@
       box-shadow: 0 14px 36px rgba(15, 23, 42, 0.12), 0 1px 0 rgba(15, 23, 42, 0.05);
     }
     @media (max-width: 640px) {
+      /* El plano ocupa toda la pantalla: sin relleno ni bordes del contenedor */
+      main { padding: 0 !important; }
+      #viewer { border: none; border-radius: 0; box-shadow: none; }
       #plan-viewport { min-height: 62vh; }
       #legend-2d, #legend-3d { display: none !important; }
       footer.no-print { display: none; }
@@ -384,7 +387,10 @@
       <button onclick="setTab('presupuesto')" id="btn-presupuesto" class="tab-btn px-2.5 sm:px-3 py-2 rounded-lg flex items-center gap-1.5 whitespace-nowrap text-slate-500 hover:bg-slate-100 transition">
         <span>Presupuesto</span>
       </button>
-      <button onclick="setTab('3d')" id="btn-3d" class="tab-btn ml-auto px-2.5 sm:px-3 py-2 rounded-lg flex items-center gap-1.5 whitespace-nowrap text-slate-500 hover:bg-slate-100 transition">
+      <button onclick="setTab('3d')" id="btn-3d" title="Vista 3D" class="tab-btn sticky right-1 z-10 ml-auto px-2.5 sm:px-3 py-2 rounded-lg flex items-center gap-1.5 whitespace-nowrap shrink-0 shadow-sm border border-slate-200 bg-sky-50 text-sky-700 hover:bg-sky-100 transition">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 16V8l-9-5-9 5v8l9 5 9-5zM3.3 7.9L12 12.8m0 0l8.7-4.9M12 22.1V12.8"/>
+        </svg>
         <span class="hidden sm:inline">Vista 3D</span>
       </button>
     </nav>
@@ -448,7 +454,7 @@
 
           <div id="view-hint" class="no-print pointer-events-none absolute right-2 top-2 max-w-[75%] rounded-md bg-slate-900/80 px-2 py-1 text-[10px] font-medium text-white transition-opacity duration-500">
             <span class="hidden sm:inline">Rueda para ampliar · arrastra para mover · doble clic para ajustar</span>
-            <span class="sm:hidden">Pellizca para ampliar · arrastra para mover</span>
+            <span class="sm:hidden">Pellizca para ampliar · arrastra · 2 toques ajusta</span>
           </div>
         </div>
 
@@ -2089,15 +2095,18 @@
     // ==========================================
     // VISOR: ZOOM, PANEO Y ESCALA GRÁFICA
     // ==========================================
-    const VIEW = { z: 1, x: 0, y: 0, min: 0.4, max: 6 };
+    const VIEW = { z: 1, x: 0, y: 0, min: 0.4, max: 6, rot: 0 };
     const SVG_ASPECT = 440 / 920;
+    // En móvil el plano se muestra en vertical (girado 90°) llenando ancho y alto de la pantalla
+    function isNarrowScreen() { return window.innerWidth <= 640; }
+    VIEW.rot = isNarrowScreen() ? 90 : 0;
 
     function viewportEl() { return document.getElementById('plan-viewport'); }
     function stageEl() { return document.getElementById('plan-stage'); }
 
     function applyView() {
       const stage = stageEl();
-      if (stage) stage.style.transform = `translate(${VIEW.x}px, ${VIEW.y}px) scale(${VIEW.z})`;
+      if (stage) stage.style.transform = `translate(${VIEW.x}px, ${VIEW.y}px) rotate(${VIEW.rot || 0}deg) scale(${VIEW.z})`;
       const label = document.getElementById('zoom-level');
       if (label) label.textContent = Math.round(VIEW.z * 100) + '%';
       updateScaleBar();
@@ -2129,19 +2138,42 @@
       const vp = viewportEl();
       const svg = vp && vp.querySelector('svg');
       if (!vp || !svg) return;
+      // En móvil el visor ocupa desde su posición hasta el fondo de la pantalla
+      if (isNarrowScreen()) {
+        const topDoc = vp.getBoundingClientRect().top + (window.scrollY || window.pageYOffset || 0);
+        const h = Math.max(300, Math.round(window.innerHeight - topDoc));
+        vp.style.height = h + 'px';
+        vp.style.minHeight = h + 'px';
+      } else {
+        vp.style.height = '';
+        vp.style.minHeight = '';
+      }
       const rect = vp.getBoundingClientRect();
-      const layoutW = (svg.getBoundingClientRect().width / VIEW.z) || rect.width;
+      const layoutW = (svg.clientWidth || (svg.getBoundingClientRect().width / VIEW.z)) || rect.width;
       if (!layoutW) return;
       const layoutH = layoutW * SVG_ASPECT;
-      // En pantallas angostas aprovecha la altura disponible (se puede arrastrar a los lados)
+      // En pantallas angostas el plano llena TODA la pantalla; en desktop escala 100%
       const narrow = rect.width < 700;
-      const maxZ = narrow ? 2.4 : 1;
-      const z = rect.height > 40 ? Math.min(maxZ, rect.height / layoutH) : 1;
-      VIEW.z = clamp(z, VIEW.min, maxZ);
-      VIEW.x = narrow
-        ? (rect.width - layoutW * VIEW.z) / 2
-        : Math.max(0, (rect.width - layoutW * VIEW.z) / 2);
-      VIEW.y = Math.max(0, (rect.height - layoutH * VIEW.z) / 2);
+      let z;
+      if (VIEW.rot === 90) {
+        // Vertical: plano girado 90°, cubriendo el ancho y el alto de la pantalla
+        // (si el plano es más alto que la pantalla se recorre arrastrando)
+        z = Math.min(VIEW.max, Math.max(rect.height / layoutW, rect.width / layoutH));
+        VIEW.z = clamp(z, VIEW.min, VIEW.max);
+        VIEW.x = rect.width / 2 + (layoutH * VIEW.z) / 2;
+        VIEW.y = rect.height / 2 - (layoutW * VIEW.z) / 2;
+      } else if (narrow) {
+        // Horizontal, cubre todo el visor (se recorre arrastrando)
+        z = Math.min(VIEW.max, Math.max(rect.width / layoutW, rect.height / layoutH));
+        VIEW.z = clamp(z, VIEW.min, VIEW.max);
+        VIEW.x = (rect.width - layoutW * VIEW.z) / 2;
+        VIEW.y = Math.max(0, (rect.height - layoutH * VIEW.z) / 2);
+      } else {
+        z = rect.height > 40 ? Math.min(1, rect.height / layoutH) : 1;
+        VIEW.z = clamp(z, VIEW.min, 1);
+        VIEW.x = Math.max(0, (rect.width - layoutW * VIEW.z) / 2);
+        VIEW.y = Math.max(0, (rect.height - layoutH * VIEW.z) / 2);
+      }
       applyView();
     }
 
@@ -2151,7 +2183,7 @@
       const bar = document.getElementById('scale-bar');
       const label = document.getElementById('scale-label');
       if (!svg || !bar || !label) return;
-      const layoutW = svg.getBoundingClientRect().width / VIEW.z;
+      const layoutW = svg.clientWidth || (svg.getBoundingClientRect().width / VIEW.z);
       if (!layoutW) return;
       const pxPerM = (layoutW / 920) * sheetPxPerM * VIEW.z;
       if (!isFinite(pxPerM) || pxPerM <= 0) return;
@@ -2294,6 +2326,8 @@
         updateScaleBar();
         clearTimeout(resizeT);
         resizeT = setTimeout(() => {
+          const rot = isNarrowScreen() ? 90 : 0;
+          if (VIEW.rot !== rot) { VIEW.rot = rot; VIEW.x = 0; VIEW.y = 0; VIEW.z = 1; }
           if (currentTab !== '3d' && currentTab !== 'presupuesto') fitView();
         }, 170);
       });
